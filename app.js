@@ -1,11 +1,7 @@
-// Life Analytics - Complete Application with Enhanced Analytics
+// Life Analytics - Comprehensive Application
 // ============================================================================
 
-// ============================================================================
-// Wisdom Quotes
-// ============================================================================
-
-const wisdomQuotes = [
+const WISDOM_QUOTES = [
     "Small daily improvements are the key to staggering long-term results.",
     "What you do today can improve all your tomorrows.",
     "Success is the sum of small efforts repeated day in and day out.",
@@ -28,185 +24,92 @@ const wisdomQuotes = [
     "Your future self is watching you right now through memories."
 ];
 
-function getRandomWisdom() {
-    return wisdomQuotes[Math.floor(Math.random() * wisdomQuotes.length)];
-}
-
-function displayWisdom() {
-    const wisdomText = document.getElementById('wisdom-text');
-    if (wisdomText) {
-        wisdomText.textContent = getRandomWisdom();
-        wisdomText.style.animation = 'fadeIn 0.5s ease';
-        setTimeout(() => {
-            wisdomText.style.animation = '';
-        }, 500);
-    }
-}
-
-// ============================================================================
-// Storage Management
-// ============================================================================
+const ACHIEVEMENTS = [
+    { id: 'first_entry', name: 'Getting Started', desc: 'Log your first day', icon: '🎯' },
+    { id: 'week_streak', name: '7 Day Streak', desc: 'Track 7 days in a row', icon: '🔥' },
+    { id: 'month_streak', name: '30 Day Warrior', desc: 'Track 30 days in a row', icon: '💪' },
+    { id: 'perfect_sleep', name: 'Sleep Master', desc: 'Get 8 hours of sleep 7 days straight', icon: '😴' },
+    { id: 'active_week', name: 'Active Lifestyle', desc: '30 min activity for 7 days', icon: '🏃' },
+    { id: 'hydration_hero', name: 'Hydration Hero', desc: 'Drink 8 glasses for 7 days', icon: '💧' },
+    { id: 'step_champion', name: 'Step Champion', desc: '10k steps for 7 days', icon: '👟' },
+    { id: 'balanced_week', name: 'Balance Master', desc: 'Balanced time allocation for 7 days', icon: '⚖️' },
+    { id: 'wellness_100', name: 'Perfect Wellness', desc: 'Score 90+ wellness for 3 days', icon: '⭐' },
+    { id: 'habit_master', name: 'Habit Master', desc: 'Complete all habits for 14 days', icon: '✅' }
+];
 
 const Storage = {
-    getEntries() {
-        const data = localStorage.getItem('lifeAnalyticsEntries');
-        return data ? JSON.parse(data) : [];
-    },
-    
-    saveEntries(entries) {
-        localStorage.setItem('lifeAnalyticsEntries', JSON.stringify(entries));
-    },
-    
+    getEntries() { return JSON.parse(localStorage.getItem('lifeAnalyticsEntries') || '[]'); },
+    saveEntries(entries) { localStorage.setItem('lifeAnalyticsEntries', JSON.stringify(entries)); },
     addEntry(entry) {
         const entries = this.getEntries();
         const existingIndex = entries.findIndex(e => e.date === entry.date);
-        
-        if (existingIndex >= 0) {
-            entries[existingIndex] = entry;
-        } else {
-            entries.push(entry);
-        }
-        
+        if (existingIndex >= 0) entries[existingIndex] = entry;
+        else entries.push(entry);
         entries.sort((a, b) => new Date(b.date) - new Date(a.date));
         this.saveEntries(entries);
         return entries;
     },
-    
-    getEntryByDate(date) {
-        const entries = this.getEntries();
-        return entries.find(e => e.date === date);
-    },
-    
-    getHabits() {
-        const data = localStorage.getItem('lifeAnalyticsHabits');
-        return data ? JSON.parse(data) : [];
-    },
-    
-    saveHabits(habits) {
-        localStorage.setItem('lifeAnalyticsHabits', JSON.stringify(habits));
-    },
-    
+    getEntryByDate(date) { return this.getEntries().find(e => e.date === date); },
+    getHabits() { return JSON.parse(localStorage.getItem('lifeAnalyticsHabits') || '[]'); },
+    saveHabits(habits) { localStorage.setItem('lifeAnalyticsHabits', JSON.stringify(habits)); },
     addHabit(habit) {
         const habits = this.getHabits();
-        habits.push({
-            id: Date.now(),
-            name: habit.name,
-            createdAt: new Date().toISOString()
-        });
+        habits.push({ id: Date.now(), name: habit.name, createdAt: new Date().toISOString() });
         this.saveHabits(habits);
         return habits;
     },
-    
     deleteHabit(id) {
-        const habits = this.getHabits();
-        const filtered = habits.filter(h => h.id !== id);
+        const filtered = this.getHabits().filter(h => h.id !== id);
         this.saveHabits(filtered);
         return filtered;
-    }
-};
-
-// ============================================================================
-// Undo System
-// ============================================================================
-
-const UndoSystem = {
-    lastAction: null,
-    
-    saveAction(action, data) {
-        this.lastAction = { action, data, timestamp: Date.now() };
     },
-    
-    canUndo() {
-        return this.lastAction !== null && 
-               (Date.now() - this.lastAction.timestamp) < 10000;
+    getGoals() { return JSON.parse(localStorage.getItem('lifeAnalyticsGoals') || '[]'); },
+    saveGoals(goals) { localStorage.setItem('lifeAnalyticsGoals', JSON.stringify(goals)); },
+    addGoal(goal) {
+        const goals = this.getGoals();
+        goals.push({ ...goal, id: Date.now(), createdAt: new Date().toISOString() });
+        this.saveGoals(goals);
+        return goals;
     },
-    
-    performUndo() {
-        if (!this.canUndo()) return false;
-        
-        const { action, data } = this.lastAction;
-        
-        switch(action) {
-            case 'save_entry':
-                const entries = Storage.getEntries();
-                const filtered = entries.filter(e => e.date !== data.date);
-                Storage.saveEntries(filtered);
-                break;
-                
-            case 'add_habit':
-                Storage.deleteHabit(data.id);
-                break;
-                
-            case 'delete_habit':
-                const habits = Storage.getHabits();
-                habits.push(data);
-                Storage.saveHabits(habits);
-                break;
-        }
-        
-        this.lastAction = null;
-        return true;
-    }
+    deleteGoal(id) {
+        const filtered = this.getGoals().filter(g => g.id !== id);
+        this.saveGoals(filtered);
+        return filtered;
+    },
+    getAchievements() { return JSON.parse(localStorage.getItem('lifeAnalyticsAchievements') || '[]'); },
+    saveAchievements(achievements) { localStorage.setItem('lifeAnalyticsAchievements', JSON.stringify(achievements)); }
 };
-
-// ============================================================================
-// Toast Notifications
-// ============================================================================
 
 const Toast = {
     show(message, showUndo = false) {
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
         const undoBtn = document.getElementById('undo-btn');
-        
         toastMessage.textContent = message;
         undoBtn.style.display = showUndo ? 'block' : 'none';
-        
         toast.classList.add('show');
-        
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 4000);
-    },
-    
-    hide() {
-        const toast = document.getElementById('toast');
-        toast.classList.remove('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
     }
 };
-
-// ============================================================================
-// Theme Management
-// ============================================================================
 
 const ThemeManager = {
     init() {
         const savedTheme = localStorage.getItem('theme') || 'light';
         this.setTheme(savedTheme);
-        
-        const toggleBtn = document.getElementById('theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => this.toggleTheme());
-        }
+        document.getElementById('theme-toggle')?.addEventListener('click', () => this.toggleTheme());
     },
-    
     setTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     },
-    
     toggleTheme() {
         const current = document.documentElement.getAttribute('data-theme') || 'light';
-        const newTheme = current === 'light' ? 'dark' : 'light';
-        this.setTheme(newTheme);
+        this.setTheme(current === 'light' ? 'dark' : 'light');
     }
 };
 
-// ============================================================================
-// Chart Management
-// ============================================================================
-
 let charts = {};
+let currentPeriod = 7;
 
 function destroyChart(chartId) {
     if (charts[chartId]) {
@@ -215,376 +118,146 @@ function destroyChart(chartId) {
     }
 }
 
-function createTimeChart(entry) {
-    const canvas = document.getElementById('timeChart');
-    if (!canvas) return;
+function getRandomWisdom() {
+    return WISDOM_QUOTES[Math.floor(Math.random() * WISDOM_QUOTES.length)];
+}
+
+function displayWisdom() {
+    const wisdomText = document.getElementById('wisdom-text');
+    if (wisdomText) {
+        wisdomText.textContent = getRandomWisdom();
+        wisdomText.style.animation = 'fadeIn 0.5s ease';
+        setTimeout(() => { wisdomText.style.animation = ''; }, 500);
+    }
+}
+
+function calculateStreak() {
+    const entries = Storage.getEntries().sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (entries.length === 0) return 0;
     
-    destroyChart('timeChart');
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    const data = [
-        { name: 'Work', value: entry.workTime, color: '#667eea' },
-        { name: 'Personal', value: entry.personalTime, color: '#10b981' },
-        { name: 'Social', value: entry.socialTime, color: '#f59e0b' },
-        { name: 'Rest', value: entry.restTime, color: '#3b82f6' }
-    ].filter(item => item.value > 0);
+    for (let i = 0; i < entries.length; i++) {
+        const entryDate = new Date(entries[i].date);
+        entryDate.setHours(0, 0, 0, 0);
+        const expectedDate = new Date(today);
+        expectedDate.setDate(expectedDate.getDate() - i);
+        
+        if (entryDate.getTime() === expectedDate.getTime()) {
+            streak++;
+        } else {
+            break;
+        }
+    }
     
-    if (data.length === 0) {
-        canvas.style.display = 'none';
+    return streak;
+}
+
+function renderStreak() {
+    const container = document.getElementById('streak-container');
+    if (!container) return;
+    
+    const streak = calculateStreak();
+    const longestStreak = parseInt(localStorage.getItem('longestStreak') || '0');
+    
+    if (streak > longestStreak) {
+        localStorage.setItem('longestStreak', streak.toString());
+    }
+    
+    container.innerHTML = `
+        <div class="streak-card">
+            <div class="streak-main">
+                <div class="streak-icon">🔥</div>
+                <div>
+                    <div class="streak-number">${streak}</div>
+                    <div class="streak-label">Day Streak</div>
+                </div>
+            </div>
+            <div class="streak-best">Best: ${Math.max(streak, longestStreak)} days</div>
+        </div>
+    `;
+}
+
+function checkAchievements() {
+    const entries = Storage.getEntries();
+    const unlocked = Storage.getAchievements();
+    const newUnlocks = [];
+    
+    ACHIEVEMENTS.forEach(achievement => {
+        if (unlocked.includes(achievement.id)) return;
+        
+        let achieved = false;
+        
+        switch(achievement.id) {
+            case 'first_entry':
+                achieved = entries.length >= 1;
+                break;
+            case 'week_streak':
+                achieved = calculateStreak() >= 7;
+                break;
+            case 'month_streak':
+                achieved = calculateStreak() >= 30;
+                break;
+            case 'perfect_sleep':
+                const last7Days = entries.slice(0, 7);
+                achieved = last7Days.length === 7 && last7Days.every(e => e.sleep >= 7.5 && e.sleep <= 9);
+                break;
+            case 'active_week':
+                const activeWeek = entries.slice(0, 7);
+                achieved = activeWeek.length === 7 && activeWeek.every(e => e.physicalActivity >= 30);
+                break;
+            case 'hydration_hero':
+                const hydrationWeek = entries.slice(0, 7);
+                achieved = hydrationWeek.length === 7 && hydrationWeek.every(e => (e.water || 0) >= 8);
+                break;
+            case 'step_champion':
+                const stepWeek = entries.slice(0, 7);
+                achieved = stepWeek.length === 7 && stepWeek.every(e => (e.steps || 0) >= 10);
+                break;
+        }
+        
+        if (achieved) {
+            newUnlocks.push(achievement.id);
+            unlocked.push(achievement.id);
+            Toast.show(`🎉 Achievement Unlocked: ${achievement.name}!`);
+        }
+    });
+    
+    if (newUnlocks.length > 0) {
+        Storage.saveAchievements(unlocked);
+    }
+}
+
+function renderAchievements() {
+    const container = document.getElementById('achievements-container');
+    if (!container) return;
+    
+    const unlocked = Storage.getAchievements();
+    
+    if (ACHIEVEMENTS.length === 0) {
+        container.innerHTML = '';
         return;
     }
     
-    canvas.style.display = 'block';
-    
-    charts.timeChart = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels: data.map(d => d.name),
-            datasets: [{
-                data: data.map(d => d.value),
-                backgroundColor: data.map(d => d.color),
-                borderWidth: 2,
-                borderColor: '#ffffff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: { size: 12, weight: '500' }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: (context) => `${context.label}: ${context.parsed}h`
-                    }
-                }
-            }
-        }
-    });
+    container.innerHTML = `
+        <h3>Achievements</h3>
+        <div class="achievements-grid">
+            ${ACHIEVEMENTS.map(ach => `
+                <div class="achievement-card ${unlocked.includes(ach.id) ? 'unlocked' : 'locked'}">
+                    <div class="achievement-icon">${unlocked.includes(ach.id) ? ach.icon : '🔒'}</div>
+                    <div class="achievement-name">${ach.name}</div>
+                    <div class="achievement-desc">${ach.desc}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
-
-function createWeeklyChart() {
-    const canvas = document.getElementById('weeklyChart');
-    if (!canvas) return;
-    
-    destroyChart('weeklyChart');
-    
-    const entries = Storage.getEntries();
-    const last7Days = getLast7DaysData(entries);
-    
-    charts.weeklyChart = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: last7Days.map(d => d.date),
-            datasets: [{
-                label: 'Energy',
-                data: last7Days.map(d => d.energy),
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: {
-                y: { 
-                    beginAtZero: true, 
-                    max: 5,
-                    ticks: { stepSize: 1 }
-                }
-            },
-            plugins: {
-                legend: { display: false }
-            }
-        }
-    });
-}
-
-function createTrendCharts() {
-    const entries = Storage.getEntries();
-    const last7Days = getLast7DaysData(entries);
-    
-    // Energy & Mood Chart
-    const energyCanvas = document.getElementById('energyMoodChart');
-    if (energyCanvas) {
-        destroyChart('energyMoodChart');
-        charts.energyMoodChart = new Chart(energyCanvas, {
-            type: 'line',
-            data: {
-                labels: last7Days.map(d => d.date),
-                datasets: [
-                    {
-                        label: 'Energy',
-                        data: last7Days.map(d => d.energy),
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Mood',
-                        data: last7Days.map(d => d.mood),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        max: 5,
-                        ticks: { stepSize: 1 }
-                    }
-                },
-                plugins: {
-                    legend: { 
-                        labels: { 
-                            font: { size: 12, weight: '500' } 
-                        } 
-                    }
-                }
-            }
-        });
-    }
-    
-    // Sleep & Activity Chart
-    const sleepCanvas = document.getElementById('sleepActivityChart');
-    if (sleepCanvas) {
-        destroyChart('sleepActivityChart');
-        charts.sleepActivityChart = new Chart(sleepCanvas, {
-            type: 'bar',
-            data: {
-                labels: last7Days.map(d => d.date),
-                datasets: [
-                    {
-                        label: 'Sleep (hours)',
-                        data: last7Days.map(d => d.sleep),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 6
-                    },
-                    {
-                        label: 'Activity (min)',
-                        data: last7Days.map(d => d.activity),
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 6
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { 
-                        labels: { 
-                            font: { size: 12, weight: '500' } 
-                        } 
-                    }
-                }
-            }
-        });
-    }
-    
-    // Screen Time Chart
-    const screenCanvas = document.getElementById('screenTimeChart');
-    if (screenCanvas) {
-        destroyChart('screenTimeChart');
-        charts.screenTimeChart = new Chart(screenCanvas, {
-            type: 'line',
-            data: {
-                labels: last7Days.map(d => d.date),
-                datasets: [{
-                    label: 'Screen Time (hours)',
-                    data: last7Days.map(d => d.screenTime),
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { 
-                        labels: { 
-                            font: { size: 12, weight: '500' } 
-                        } 
-                    }
-                }
-            }
-        });
-    }
-
-    // Food Quality Pie Chart
-    const foodCanvas = document.getElementById('foodQualityChart');
-    if (foodCanvas && entries.length > 0) {
-        destroyChart('foodQualityChart');
-        
-        const foodCounts = entries.reduce((acc, e) => {
-            acc[e.foodType] = (acc[e.foodType] || 0) + 1;
-            return acc;
-        }, {});
-        
-        charts.foodQualityChart = new Chart(foodCanvas, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(foodCounts).map(k => k === 'healthy' ? 'Healthy' : k === 'fast-food' ? 'Fast Food' : 'Skipped'),
-                datasets: [{
-                    data: Object.values(foodCounts),
-                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            font: { size: 12, weight: '500' }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Daily Balance Chart
-    const balanceCanvas = document.getElementById('balanceChart');
-    if (balanceCanvas) {
-        destroyChart('balanceChart');
-        
-        const avgData = {
-            work: entries.reduce((sum, e) => sum + (e.workTime || 0), 0) / entries.length || 0,
-            personal: entries.reduce((sum, e) => sum + (e.personalTime || 0), 0) / entries.length || 0,
-            social: entries.reduce((sum, e) => sum + (e.socialTime || 0), 0) / entries.length || 0,
-            rest: entries.reduce((sum, e) => sum + (e.restTime || 0), 0) / entries.length || 0
-        };
-        
-        charts.balanceChart = new Chart(balanceCanvas, {
-            type: 'polarArea',
-            data: {
-                labels: ['Work', 'Personal', 'Social', 'Rest'],
-                datasets: [{
-                    data: [avgData.work, avgData.personal, avgData.social, avgData.rest],
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.6)',
-                        'rgba(16, 185, 129, 0.6)',
-                        'rgba(245, 158, 11, 0.6)',
-                        'rgba(59, 130, 246, 0.6)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            font: { size: 12, weight: '500' }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Productivity Score Chart
-    const productivityCanvas = document.getElementById('productivityChart');
-    if (productivityCanvas) {
-        destroyChart('productivityChart');
-        
-        const productivityScores = last7Days.map(d => {
-            const entry = entries.find(e => new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === d.date);
-            if (!entry) return 0;
-            
-            // Calculate productivity score based on multiple factors
-            const sleepScore = Math.min(entry.sleep / 8, 1) * 20;
-            const activityScore = Math.min(entry.activity / 30, 1) * 20;
-            const energyScore = (entry.energy / 5) * 20;
-            const moodScore = (entry.mood / 5) * 20;
-            const screenPenalty = Math.max(0, 20 - (entry.screenTime * 2));
-            
-            return sleepScore + activityScore + energyScore + moodScore + screenPenalty;
-        });
-        
-        charts.productivityChart = new Chart(productivityCanvas, {
-            type: 'bar',
-            data: {
-                labels: last7Days.map(d => d.date),
-                datasets: [{
-                    label: 'Productivity Score',
-                    data: productivityScores,
-                    backgroundColor: productivityScores.map(score => 
-                        score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'
-                    ),
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: { stepSize: 20 }
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
-}
-
-function getLast7DaysData(entries) {
-    return [...Array(7)].map((_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        const dateStr = date.toISOString().split('T')[0];
-        const entry = entries.find(e => e.date === dateStr);
-        return {
-            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            energy: entry?.energy || 0,
-            mood: entry?.mood || 0,
-            sleep: entry?.sleep || 0,
-            activity: entry?.physicalActivity || 0,
-            screenTime: entry?.screenTime || 0
-        };
-    });
-}
-
-// ============================================================================
-// Personal Suggestions
-// ============================================================================
 
 function generateSuggestions(entry) {
     const suggestions = [];
     
-    // Sleep analysis
     if (entry.sleep < 6) {
         suggestions.push({
             type: 'bad',
@@ -599,16 +272,8 @@ function generateSuggestions(entry) {
             title: 'Great Sleep',
             message: `Excellent! ${entry.sleep} hours is within the recommended range. Keep it up!`
         });
-    } else if (entry.sleep > 9) {
-        suggestions.push({
-            type: 'neutral',
-            icon: '💤',
-            title: 'Extra Sleep',
-            message: `You slept ${entry.sleep} hours. While rest is important, oversleeping may indicate other issues.`
-        });
     }
     
-    // Physical activity
     if (entry.physicalActivity < 20) {
         suggestions.push({
             type: 'bad',
@@ -625,7 +290,6 @@ function generateSuggestions(entry) {
         });
     }
     
-    // Screen time
     if (entry.screenTime > 6) {
         suggestions.push({
             type: 'bad',
@@ -642,7 +306,40 @@ function generateSuggestions(entry) {
         });
     }
     
-    // Food quality
+    const water = entry.water || 0;
+    if (water < 6) {
+        suggestions.push({
+            type: 'bad',
+            icon: '💧',
+            title: 'Low Hydration',
+            message: `Only ${water} glasses of water. Aim for at least 8 glasses daily.`
+        });
+    } else if (water >= 8) {
+        suggestions.push({
+            type: 'good',
+            icon: '💦',
+            title: 'Well Hydrated',
+            message: `Excellent! You drank ${water} glasses of water. Stay hydrated!`
+        });
+    }
+    
+    const steps = entry.steps || 0;
+    if (steps < 7) {
+        suggestions.push({
+            type: 'bad',
+            icon: '👟',
+            title: 'Low Step Count',
+            message: `Only ${steps}k steps. Try to reach 10k steps for better health.`
+        });
+    } else if (steps >= 10) {
+        suggestions.push({
+            type: 'good',
+            icon: '🚶',
+            title: 'Step Goal Achieved',
+            message: `Amazing! You walked ${steps}k steps today. Keep moving!`
+        });
+    }
+    
     if (entry.foodType === 'fast-food') {
         suggestions.push({
             type: 'bad',
@@ -666,7 +363,6 @@ function generateSuggestions(entry) {
         });
     }
     
-    // Energy and mood correlation
     if (entry.energy <= 2 || entry.mood <= 2) {
         suggestions.push({
             type: 'bad',
@@ -683,7 +379,6 @@ function generateSuggestions(entry) {
         });
     }
     
-    // Work-life balance
     const totalTime = (entry.workTime || 0) + (entry.personalTime || 0) + (entry.socialTime || 0) + (entry.restTime || 0);
     if (totalTime > 0) {
         const workPercent = ((entry.workTime || 0) / totalTime) * 100;
@@ -742,187 +437,336 @@ function renderSuggestions() {
     `;
 }
 
-// ============================================================================
-// Correlation Analysis
-// ============================================================================
-
-function calculateCorrelation(x, y) {
-    const n = x.length;
-    if (n === 0) return 0;
-    
-    const sumX = x.reduce((a, b) => a + b, 0);
-    const sumY = y.reduce((a, b) => a + b, 0);
-    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
-    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
-    const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
-    
-    const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-    
-    if (denominator === 0) return 0;
-    return numerator / denominator;
-}
-
-function analyzeCorrelations() {
+function getDataForPeriod(period) {
     const entries = Storage.getEntries();
+    const days = period === 'all' ? entries.length : period;
     
-    if (entries.length < 7) {
-        return [{
-            title: 'Not Enough Data',
-            description: 'Track at least 7 days to see meaningful patterns and correlations.',
-            strength: 'weak',
-            correlation: 0
-        }];
-    }
-    
-    const correlations = [];
-    
-    const sleepData = entries.map(e => e.sleep);
-    const energyData = entries.map(e => e.energy);
-    const sleepEnergyCorr = calculateCorrelation(sleepData, energyData);
-    
-    if (Math.abs(sleepEnergyCorr) > 0.3) {
-        const avgSleep = sleepData.reduce((a, b) => a + b, 0) / sleepData.length;
-        correlations.push({
-            title: 'Sleep Quality → Energy Levels',
-            description: `Your sleep and energy levels show a ${sleepEnergyCorr > 0 ? 'positive' : 'negative'} correlation (${(sleepEnergyCorr * 100).toFixed(0)}%). ${
-                sleepEnergyCorr > 0.5 ? 
-                `Getting ${avgSleep >= 7 ? 'adequate' : 'more'} sleep significantly boosts your energy.` :
-                'Consider optimizing your sleep schedule for better energy levels.'
-            }`,
-            strength: Math.abs(sleepEnergyCorr) > 0.7 ? 'strong' : Math.abs(sleepEnergyCorr) > 0.5 ? 'moderate' : 'weak',
-            correlation: sleepEnergyCorr,
-            avgValue: avgSleep.toFixed(1) + 'h'
-        });
-    }
-    
-    const activityData = entries.map(e => e.physicalActivity);
-    const moodData = entries.map(e => e.mood);
-    const activityMoodCorr = calculateCorrelation(activityData, moodData);
-    
-    if (Math.abs(activityMoodCorr) > 0.3) {
-        const avgActivity = activityData.reduce((a, b) => a + b, 0) / activityData.length;
-        correlations.push({
-            title: 'Physical Activity → Mood',
-            description: `Physical activity and mood show a ${activityMoodCorr > 0 ? 'positive' : 'negative'} relationship (${(activityMoodCorr * 100).toFixed(0)}%). ${
-                activityMoodCorr > 0.5 ?
-                `Days with ${avgActivity >= 30 ? 'regular' : 'more'} exercise tend to have better moods.` :
-                'Consider incorporating more movement into your routine.'
-            }`,
-            strength: Math.abs(activityMoodCorr) > 0.7 ? 'strong' : Math.abs(activityMoodCorr) > 0.5 ? 'moderate' : 'weak',
-            correlation: activityMoodCorr,
-            avgValue: Math.round(avgActivity) + ' min'
-        });
-    }
-    
-    const screenData = entries.map(e => e.screenTime);
-    const screenSleepCorr = calculateCorrelation(screenData, sleepData);
-    
-    if (Math.abs(screenSleepCorr) > 0.3) {
-        const avgScreen = screenData.reduce((a, b) => a + b, 0) / screenData.length;
-        correlations.push({
-            title: 'Screen Time → Sleep Quality',
-            description: `Screen time and sleep show a ${screenSleepCorr < 0 ? 'negative' : 'positive'} correlation (${(screenSleepCorr * 100).toFixed(0)}%). ${
-                screenSleepCorr < -0.3 ?
-                `High screen time (avg ${avgScreen.toFixed(1)}h) may be affecting your sleep quality.` :
-                'Monitor screen time before bed for better sleep.'
-            }`,
-            strength: Math.abs(screenSleepCorr) > 0.7 ? 'strong' : Math.abs(screenSleepCorr) > 0.5 ? 'moderate' : 'weak',
-            correlation: screenSleepCorr,
-            avgValue: avgScreen.toFixed(1) + 'h'
-        });
-    }
-    
-    const workData = entries.map(e => e.workTime || 0);
-    const restData = entries.map(e => e.restTime || 0);
-    const workRestRatio = workData.reduce((a, b) => a + b, 0) / (restData.reduce((a, b) => a + b, 0) || 1);
-    
-    if (workRestRatio > 2 || workRestRatio < 0.5) {
-        correlations.push({
-            title: 'Work-Life Balance',
-            description: `Your work-to-rest ratio is ${workRestRatio.toFixed(1)}:1. ${
-                workRestRatio > 2 ?
-                'Consider allocating more time for rest and recovery.' :
-                workRestRatio < 0.5 ?
-                'You have good rest time. Ensure work productivity is optimal.' :
-                'Your balance looks healthy.'
-            }`,
-            strength: workRestRatio > 3 || workRestRatio < 0.3 ? 'strong' : 'moderate',
-            correlation: 0,
-            avgValue: workRestRatio.toFixed(1) + ':1'
-        });
-    }
-    
-    if (correlations.length === 0) {
-        correlations.push({
-            title: 'Keep Tracking',
-            description: 'No strong patterns detected yet. Continue tracking to discover meaningful insights about your habits and wellbeing.',
-            strength: 'weak',
-            correlation: 0
-        });
-    }
-    
-    return correlations;
+    return [...Array(Math.min(days, 90))].map((_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (days - 1 - i));
+        const dateStr = date.toISOString().split('T')[0];
+        const entry = entries.find(e => e.date === dateStr);
+        return {
+            date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            fullDate: dateStr,
+            entry: entry || null,
+            energy: entry?.energy || 0,
+            mood: entry?.mood || 0,
+            sleep: entry?.sleep || 0,
+            activity: entry?.physicalActivity || 0,
+            screenTime: entry?.screenTime || 0,
+            water: entry?.water || 0,
+            steps: entry?.steps || 0,
+            stress: entry?.stress || 0,
+            productivity: entry?.productivity || 0
+        };
+    });
 }
 
-function renderCorrelations() {
-    const container = document.getElementById('correlations-container');
-    if (!container) return;
+function createTimeChart(entry) {
+    const canvas = document.getElementById('timeChart');
+    if (!canvas) return;
     
-    const correlations = analyzeCorrelations();
+    destroyChart('timeChart');
     
-    if (correlations.length === 0 || correlations[0].title === 'Not Enough Data') {
-        container.innerHTML = `
-            <div class="no-correlations">
-                <h3>Not Enough Data</h3>
-                <p>Track at least 7 days to discover patterns and correlations in your data.</p>
-            </div>
-        `;
+    const data = [
+        { name: 'Work', value: entry.workTime, color: '#667eea' },
+        { name: 'Personal', value: entry.personalTime, color: '#10b981' },
+        { name: 'Social', value: entry.socialTime, color: '#f59e0b' },
+        { name: 'Rest', value: entry.restTime, color: '#3b82f6' }
+    ].filter(item => item.value > 0);
+    
+    if (data.length === 0) {
+        canvas.style.display = 'none';
         return;
     }
     
-    container.innerHTML = correlations.map(corr => `
-        <div class="correlation-card">
-            <div class="correlation-header">
-                <div>
-                    <h3 class="correlation-title">${corr.title}</h3>
-                    <span class="correlation-badge ${corr.strength}">${corr.strength}</span>
-                </div>
-            </div>
-            <p class="correlation-description">${corr.description}</p>
-            ${corr.avgValue ? `
-                <div class="correlation-stats">
-                    <div class="correlation-stat">
-                        <div class="correlation-stat-value">${(corr.correlation * 100).toFixed(0)}%</div>
-                        <div class="correlation-stat-label">Correlation</div>
-                    </div>
-                    <div class="correlation-stat">
-                        <div class="correlation-stat-value">${corr.avgValue}</div>
-                        <div class="correlation-stat-label">Average</div>
-                    </div>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
+    canvas.style.display = 'block';
+    
+    charts.timeChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: data.map(d => d.name),
+            datasets: [{
+                data: data.map(d => d.value),
+                backgroundColor: data.map(d => d.color),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 15, font: { size: 12, weight: '500' } } },
+                tooltip: { callbacks: { label: (context) => `${context.label}: ${context.parsed}h` } }
+            }
+        }
+    });
 }
 
-// ============================================================================
-// Dashboard Rendering
-// ============================================================================
+function createWeeklyChart() {
+    const canvas = document.getElementById('weeklyChart');
+    if (!canvas) return;
+    
+    destroyChart('weeklyChart');
+    
+    const data = getDataForPeriod(7);
+    
+    charts.weeklyChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.date),
+            datasets: [{
+                label: 'Energy',
+                data: data.map(d => d.energy),
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function createTrendCharts() {
+    const data = getDataForPeriod(currentPeriod);
+    const entries = Storage.getEntries();
+    
+    // Energy & Mood
+    const energyCanvas = document.getElementById('energyMoodChart');
+    if (energyCanvas) {
+        destroyChart('energyMoodChart');
+        charts.energyMoodChart = new Chart(energyCanvas, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [
+                    {
+                        label: 'Energy',
+                        data: data.map(d => d.energy),
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Mood',
+                        data: data.map(d => d.mood),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+    
+    // Sleep & Activity
+    const sleepCanvas = document.getElementById('sleepActivityChart');
+    if (sleepCanvas) {
+        destroyChart('sleepActivityChart');
+        charts.sleepActivityChart = new Chart(sleepCanvas, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [
+                    { label: 'Sleep (hours)', data: data.map(d => d.sleep), backgroundColor: '#3b82f6', borderRadius: 6 },
+                    { label: 'Activity (min)', data: data.map(d => d.activity), backgroundColor: '#f59e0b', borderRadius: 6 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    }
+    
+    // Screen Time
+    const screenCanvas = document.getElementById('screenTimeChart');
+    if (screenCanvas) {
+        destroyChart('screenTimeChart');
+        charts.screenTimeChart = new Chart(screenCanvas, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [{
+                    label: 'Screen Time (hours)',
+                    data: data.map(d => d.screenTime),
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    }
+    
+    // Food Quality
+    const foodCanvas = document.getElementById('foodQualityChart');
+    if (foodCanvas && entries.length > 0) {
+        destroyChart('foodQualityChart');
+        const foodCounts = entries.reduce((acc, e) => {
+            acc[e.foodType] = (acc[e.foodType] || 0) + 1;
+            return acc;
+        }, {});
+        charts.foodQualityChart = new Chart(foodCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(foodCounts).map(k => k === 'healthy' ? 'Healthy' : k === 'fast-food' ? 'Fast Food' : 'Skipped'),
+                datasets: [{
+                    data: Object.values(foodCounts),
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+    
+    // Balance Chart
+    const balanceCanvas = document.getElementById('balanceChart');
+    if (balanceCanvas && entries.length > 0) {
+        destroyChart('balanceChart');
+        const avgData = {
+            work: entries.reduce((sum, e) => sum + (e.workTime || 0), 0) / entries.length || 0,
+            personal: entries.reduce((sum, e) => sum + (e.personalTime || 0), 0) / entries.length || 0,
+            social: entries.reduce((sum, e) => sum + (e.socialTime || 0), 0) / entries.length || 0,
+            rest: entries.reduce((sum, e) => sum + (e.restTime || 0), 0) / entries.length || 0
+        };
+        charts.balanceChart = new Chart(balanceCanvas, {
+            type: 'polarArea',
+            data: {
+                labels: ['Work', 'Personal', 'Social', 'Rest'],
+                datasets: [{
+                    data: [avgData.work, avgData.personal, avgData.social, avgData.rest],
+                    backgroundColor: ['rgba(102, 126, 234, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(59, 130, 246, 0.6)'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+    
+    // Wellness Score
+    const wellnessCanvas = document.getElementById('wellnessChart');
+    if (wellnessCanvas) {
+        destroyChart('wellnessChart');
+        const wellnessScores = data.map(d => {
+            if (!d.entry) return 0;
+            const sleepScore = Math.min(d.sleep / 8, 1) * 20;
+            const activityScore = Math.min(d.activity / 30, 1) * 20;
+            const energyScore = (d.energy / 5) * 20;
+            const moodScore = (d.mood / 5) * 20;
+            const screenPenalty = Math.max(0, 20 - (d.screenTime * 2));
+            return sleepScore + activityScore + energyScore + moodScore + screenPenalty;
+        });
+        charts.wellnessChart = new Chart(wellnessCanvas, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [{
+                    label: 'Wellness Score',
+                    data: wellnessScores,
+                    backgroundColor: wellnessScores.map(score => score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+    
+    // Hydration & Steps
+    const hydrationCanvas = document.getElementById('hydrationChart');
+    if (hydrationCanvas) {
+        destroyChart('hydrationChart');
+        charts.hydrationChart = new Chart(hydrationCanvas, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [
+                    { label: 'Water (glasses)', data: data.map(d => d.water), backgroundColor: '#3b82f6', borderRadius: 6 },
+                    { label: 'Steps (k)', data: data.map(d => d.steps), backgroundColor: '#10b981', borderRadius: 6 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: true }
+        });
+    }
+    
+    // Stress vs Productivity
+    const stressCanvas = document.getElementById('stressProductivityChart');
+    if (stressCanvas) {
+        destroyChart('stressProductivityChart');
+        charts.stressProductivityChart = new Chart(stressCanvas, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [
+                    {
+                        label: 'Stress',
+                        data: data.map(d => d.stress),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Productivity',
+                        data: data.map(d => d.productivity),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+}
 
 function renderDashboard() {
     const dateDisplay = document.getElementById('current-date');
     if (dateDisplay) {
         const today = new Date();
         dateDisplay.textContent = today.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
         });
     }
     
     displayWisdom();
+    renderStreak();
     
     const todayStr = new Date().toISOString().split('T')[0];
     const entry = Storage.getEntryByDate(todayStr);
@@ -937,6 +781,7 @@ function renderDashboard() {
         document.getElementById('quick-stats').innerHTML = '';
         document.getElementById('habits-summary').innerHTML = '';
         document.getElementById('suggestions-container').innerHTML = '';
+        document.getElementById('achievements-container').innerHTML = '';
         return;
     }
     
@@ -965,6 +810,7 @@ function renderDashboard() {
     createTimeChart(entry);
     createWeeklyChart();
     renderHabitsSummary(entry);
+    renderAchievements();
 }
 
 function renderHabitsSummary(entry) {
@@ -993,10 +839,6 @@ function renderHabitsSummary(entry) {
     `;
 }
 
-// ============================================================================
-// Form Management
-// ============================================================================
-
 function initializeForm() {
     const form = document.getElementById('daily-form');
     const today = new Date().toISOString().split('T')[0];
@@ -1004,13 +846,13 @@ function initializeForm() {
     document.getElementById('date').value = today;
     
     const entry = Storage.getEntryByDate(today);
-    if (entry) {
-        loadFormData(entry);
-    }
+    if (entry) loadFormData(entry);
     
     setupRangeInput('sleep', 'sleep-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     setupRangeInput('activity', 'activity-value', (val) => `${val} min`);
     setupRangeInput('screen', 'screen-value', (val) => `${parseFloat(val).toFixed(1)}h`);
+    setupRangeInput('water', 'water-value', (val) => `${val}`);
+    setupRangeInput('steps', 'steps-value', (val) => `${val}k`);
     setupRangeInput('work-time', 'work-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     setupRangeInput('personal-time', 'personal-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     setupRangeInput('social-time', 'social-value', (val) => `${parseFloat(val).toFixed(1)}h`);
@@ -1042,7 +884,6 @@ function setupRangeInput(inputId, displayId, formatter) {
         const updateDisplay = () => {
             display.textContent = formatter(input.value);
         };
-        
         input.addEventListener('input', updateDisplay);
         updateDisplay();
     }
@@ -1052,48 +893,37 @@ function loadFormData(entry) {
     document.getElementById('sleep').value = entry.sleep;
     document.getElementById('activity').value = entry.physicalActivity;
     document.getElementById('screen').value = entry.screenTime;
+    document.getElementById('water').value = entry.water || 8;
+    document.getElementById('steps').value = entry.steps || 10;
     document.getElementById('work-time').value = entry.workTime || 0;
     document.getElementById('personal-time').value = entry.personalTime || 0;
     document.getElementById('social-time').value = entry.socialTime || 0;
     document.getElementById('rest-time').value = entry.restTime || 0;
     
-    ['sleep', 'activity', 'screen', 'work-time', 'personal-time', 'social-time', 'rest-time'].forEach(id => {
+    ['sleep', 'activity', 'screen', 'water', 'steps', 'work-time', 'personal-time', 'social-time', 'rest-time'].forEach(id => {
         const input = document.getElementById(id);
         if (input) input.dispatchEvent(new Event('input'));
     });
     
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.dataset.food === entry.foodType) {
-            btn.classList.add('active');
-        }
+        if (btn.dataset.food === entry.foodType) btn.classList.add('active');
     });
     
-    document.querySelectorAll('#energy-rating .rating-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (parseInt(btn.dataset.rating) === entry.energy) {
-            btn.classList.add('active');
-        }
-    });
-    
-    document.querySelectorAll('#mood-rating .rating-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (parseInt(btn.dataset.rating) === entry.mood) {
-            btn.classList.add('active');
-        }
+    ['energy', 'mood', 'stress', 'productivity'].forEach(type => {
+        document.querySelectorAll(`#${type}-rating .rating-btn`).forEach(btn => {
+            btn.classList.remove('active');
+            if (parseInt(btn.dataset.rating) === entry[type]) btn.classList.add('active');
+        });
     });
     
     const diaryTextarea = document.getElementById('diary');
-    if (diaryTextarea && entry.diary) {
-        diaryTextarea.value = entry.diary;
-    }
+    if (diaryTextarea && entry.diary) diaryTextarea.value = entry.diary;
     
     if (entry.habits) {
         entry.habits.forEach(habit => {
             const checkbox = document.querySelector(`input[data-habit-id="${habit.id}"]`);
-            if (checkbox) {
-                checkbox.checked = habit.completed;
-            }
+            if (checkbox) checkbox.checked = habit.completed;
         });
     }
 }
@@ -1104,6 +934,8 @@ function handleFormSubmit(e) {
     const foodTypeBtn = document.querySelector('.option-btn.active');
     const energyBtn = document.querySelector('#energy-rating .rating-btn.active');
     const moodBtn = document.querySelector('#mood-rating .rating-btn.active');
+    const stressBtn = document.querySelector('#stress-rating .rating-btn.active');
+    const productivityBtn = document.querySelector('#productivity-rating .rating-btn.active');
     
     const habits = Storage.getHabits();
     const habitData = habits.map(habit => ({
@@ -1118,8 +950,12 @@ function handleFormSubmit(e) {
         foodType: foodTypeBtn ? foodTypeBtn.dataset.food : 'healthy',
         physicalActivity: parseInt(document.getElementById('activity').value),
         screenTime: parseFloat(document.getElementById('screen').value),
+        water: parseInt(document.getElementById('water').value),
+        steps: parseInt(document.getElementById('steps').value),
         energy: energyBtn ? parseInt(energyBtn.dataset.rating) : 3,
         mood: moodBtn ? parseInt(moodBtn.dataset.rating) : 3,
+        stress: stressBtn ? parseInt(stressBtn.dataset.rating) : 3,
+        productivity: productivityBtn ? parseInt(productivityBtn.dataset.rating) : 3,
         workTime: parseFloat(document.getElementById('work-time').value),
         personalTime: parseFloat(document.getElementById('personal-time').value),
         socialTime: parseFloat(document.getElementById('social-time').value),
@@ -1130,18 +966,12 @@ function handleFormSubmit(e) {
     };
     
     Storage.addEntry(entry);
-    UndoSystem.saveAction('save_entry', entry);
+    checkAchievements();
     
     Toast.show('Entry saved successfully', true);
     
-    setTimeout(() => {
-        switchView('dashboard');
-    }, 500);
+    setTimeout(() => { switchView('dashboard'); }, 500);
 }
-
-// ============================================================================
-// Custom Habits Management
-// ============================================================================
 
 function renderHabitsForm() {
     const container = document.getElementById('habits-container');
@@ -1171,9 +1001,7 @@ function renderHabitsForm() {
     container.querySelectorAll('.habit-delete').forEach(btn => {
         btn.addEventListener('click', function() {
             const habitId = parseInt(this.dataset.habitId);
-            const habit = habits.find(h => h.id === habitId);
             Storage.deleteHabit(habitId);
-            UndoSystem.saveAction('delete_habit', habit);
             Toast.show('Habit deleted', true);
             renderHabitsForm();
         });
@@ -1192,18 +1020,11 @@ function initializeHabitModal() {
         document.getElementById('habit-name').value = '';
     });
     
-    closeBtn.addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
-    
-    cancelBtn.addEventListener('click', () => {
-        modal.classList.remove('active');
-    });
+    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    cancelBtn.addEventListener('click', () => modal.classList.remove('active'));
     
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.remove('active');
-        }
+        if (e.target === modal) modal.classList.remove('active');
     });
     
     form.addEventListener('submit', (e) => {
@@ -1211,9 +1032,7 @@ function initializeHabitModal() {
         const habitName = document.getElementById('habit-name').value.trim();
         
         if (habitName) {
-            const newHabit = Storage.addHabit({ name: habitName });
-            const addedHabit = newHabit[newHabit.length - 1];
-            UndoSystem.saveAction('add_habit', addedHabit);
+            Storage.addHabit({ name: habitName });
             Toast.show('Habit added successfully', true);
             renderHabitsForm();
             modal.classList.remove('active');
@@ -1221,9 +1040,92 @@ function initializeHabitModal() {
     });
 }
 
-// ============================================================================
-// Trends View
-// ============================================================================
+function renderGoals() {
+    const container = document.getElementById('goals-container');
+    if (!container) return;
+    
+    const goals = Storage.getGoals();
+    const entries = Storage.getEntries();
+    
+    if (goals.length === 0) {
+        container.innerHTML = '<div class="no-data"><h3>No Goals Set</h3><p>Create your first goal to start tracking progress</p></div>';
+        return;
+    }
+    
+    container.innerHTML = goals.map(goal => {
+        const relevantEntries = entries.slice(0, goal.duration);
+        const completedDays = relevantEntries.filter(entry => {
+            const value = entry[goal.type];
+            if (goal.type === 'screen') return value <= goal.target;
+            return value >= goal.target;
+        }).length;
+        const progress = (completedDays / goal.duration) * 100;
+        
+        return `
+            <div class="goal-card">
+                <div class="goal-header">
+                    <h4>${goal.name}</h4>
+                    <button class="goal-delete" data-goal-id="${goal.id}">×</button>
+                </div>
+                <div class="goal-meta">Target: ${goal.target} | Duration: ${goal.duration} days</div>
+                <div class="goal-progress">
+                    <div class="goal-progress-bar">
+                        <div class="goal-progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="goal-progress-text">${completedDays}/${goal.duration} days</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    container.querySelectorAll('.goal-delete').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const goalId = parseInt(this.dataset.goalId);
+            Storage.deleteGoal(goalId);
+            Toast.show('Goal deleted');
+            renderGoals();
+        });
+    });
+}
+
+function initializeGoalModal() {
+    const modal = document.getElementById('goal-modal');
+    const addBtn = document.getElementById('add-goal-btn');
+    const closeBtn = document.getElementById('close-goal-modal');
+    const cancelBtn = document.getElementById('cancel-goal');
+    const form = document.getElementById('add-goal-form');
+    
+    if (!addBtn || !modal) return;
+    
+    addBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+    });
+    
+    if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.remove('active'));
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+    });
+    
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const goal = {
+                name: document.getElementById('goal-name').value,
+                type: document.getElementById('goal-type').value,
+                target: parseFloat(document.getElementById('goal-target').value),
+                duration: parseInt(document.getElementById('goal-duration').value)
+            };
+            
+            Storage.addGoal(goal);
+            Toast.show('Goal created successfully');
+            renderGoals();
+            modal.classList.remove('active');
+            form.reset();
+        });
+    }
+}
 
 function renderTrends() {
     const entries = Storage.getEntries();
@@ -1244,48 +1146,116 @@ function renderTrends() {
     const avgMood = (entries.reduce((sum, e) => sum + e.mood, 0) / entries.length).toFixed(1);
     const avgSleep = (entries.reduce((sum, e) => sum + e.sleep, 0) / entries.length).toFixed(1);
     const avgActivity = Math.round(entries.reduce((sum, e) => sum + e.physicalActivity, 0) / entries.length);
+    const avgWater = Math.round(entries.reduce((sum, e) => sum + (e.water || 0), 0) / entries.length);
+    const avgSteps = Math.round(entries.reduce((sum, e) => sum + (e.steps || 0), 0) / entries.length);
     
     const bestDay = entries.reduce((best, e) => (e.energy + e.mood > best.energy + best.mood) ? e : best);
-    const mostProductive = entries.reduce((best, e) => ((e.workTime || 0) > (best.workTime || 0)) ? e : best);
+    const mostProductive = entries.reduce((best, e) => ((e.productivity || 0) > (best.productivity || 0)) ? e : best);
     
     document.getElementById('stats-summary').innerHTML = `
-        <h3>Summary Statistics</h3>
-        <div class="summary-item">
-            <span class="summary-label">Average Energy</span>
-            <span class="summary-value">${avgEnergy}/5</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Average Mood</span>
-            <span class="summary-value">${avgMood}/5</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Average Sleep</span>
-            <span class="summary-value">${avgSleep}h</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Average Activity</span>
-            <span class="summary-value">${avgActivity} min</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Total Entries</span>
-            <span class="summary-value">${entries.length}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Best Day</span>
-            <span class="summary-value">${new Date(bestDay.date).toLocaleDateString()}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Most Productive</span>
-            <span class="summary-value">${new Date(mostProductive.date).toLocaleDateString()}</span>
-        </div>
+        <h3>Summary Statistics (${currentPeriod === 'all' ? 'All Time' : currentPeriod + ' Days'})</h3>
+        <div class="summary-item"><span class="summary-label">Average Energy</span><span class="summary-value">${avgEnergy}/5</span></div>
+        <div class="summary-item"><span class="summary-label">Average Mood</span><span class="summary-value">${avgMood}/5</span></div>
+        <div class="summary-item"><span class="summary-label">Average Sleep</span><span class="summary-value">${avgSleep}h</span></div>
+        <div class="summary-item"><span class="summary-label">Average Activity</span><span class="summary-value">${avgActivity} min</span></div>
+        <div class="summary-item"><span class="summary-label">Average Water</span><span class="summary-value">${avgWater} glasses</span></div>
+        <div class="summary-item"><span class="summary-label">Average Steps</span><span class="summary-value">${avgSteps}k</span></div>
+        <div class="summary-item"><span class="summary-label">Total Entries</span><span class="summary-value">${entries.length}</span></div>
+        <div class="summary-item"><span class="summary-label">Best Day</span><span class="summary-value">${new Date(bestDay.date).toLocaleDateString()}</span></div>
+        <div class="summary-item"><span class="summary-label">Most Productive</span><span class="summary-value">${new Date(mostProductive.date).toLocaleDateString()}</span></div>
     `;
 }
 
-// ============================================================================
-// Calendar View
-// ============================================================================
-
-let currentCalendarDate = new Date();
+function renderReports() {
+    const entries = Storage.getEntries();
+    
+    if (entries.length === 0) {
+        document.getElementById('overview-report').innerHTML = '<p>No data available</p>';
+        document.getElementById('health-score-report').innerHTML = '<p>No data available</p>';
+        document.getElementById('goal-progress-report').innerHTML = '<p>No data available</p>';
+        document.getElementById('best-worst-report').innerHTML = '<p>No data available</p>';
+        return;
+    }
+    
+    // Overview Report
+    const totalDays = entries.length;
+    const streak = calculateStreak();
+    document.getElementById('overview-report').innerHTML = `
+        <div class="report-stat">Total Days Tracked: <strong>${totalDays}</strong></div>
+        <div class="report-stat">Current Streak: <strong>${streak} days</strong></div>
+        <div class="report-stat">Data Range: <strong>${new Date(entries[entries.length - 1].date).toLocaleDateString()} - ${new Date(entries[0].date).toLocaleDateString()}</strong></div>
+    `;
+    
+    // Health Score
+    const avgWellness = entries.reduce((sum, e) => {
+        const sleepScore = Math.min(e.sleep / 8, 1) * 20;
+        const activityScore = Math.min(e.physicalActivity / 30, 1) * 20;
+        const energyScore = (e.energy / 5) * 20;
+        const moodScore = (e.mood / 5) * 20;
+        const screenPenalty = Math.max(0, 20 - (e.screenTime * 2));
+        return sum + sleepScore + activityScore + energyScore + moodScore + screenPenalty;
+    }, 0) / entries.length;
+    
+    let healthGrade = 'Poor';
+    if (avgWellness >= 80) healthGrade = 'Excellent';
+    else if (avgWellness >= 60) healthGrade = 'Good';
+    else if (avgWellness >= 40) healthGrade = 'Fair';
+    
+    document.getElementById('health-score-report').innerHTML = `
+        <div class="health-score-display">
+            <div class="health-score-number">${avgWellness.toFixed(0)}</div>
+            <div class="health-score-grade">${healthGrade}</div>
+        </div>
+        <div class="report-stat">Keep improving your wellness score by maintaining healthy habits!</div>
+    `;
+    
+    // Goal Progress
+    const goals = Storage.getGoals();
+    if (goals.length > 0) {
+        const completedGoals = goals.filter(goal => {
+            const relevantEntries = entries.slice(0, goal.duration);
+            const completedDays = relevantEntries.filter(entry => {
+                const value = entry[goal.type];
+                if (goal.type === 'screen') return value <= goal.target;
+                return value >= goal.target;
+            }).length;
+            return completedDays >= goal.duration;
+        }).length;
+        
+        document.getElementById('goal-progress-report').innerHTML = `
+            <div class="report-stat">Active Goals: <strong>${goals.length}</strong></div>
+            <div class="report-stat">Completed Goals: <strong>${completedGoals}</strong></div>
+            <div class="report-stat">Success Rate: <strong>${((completedGoals / goals.length) * 100).toFixed(0)}%</strong></div>
+        `;
+    } else {
+        document.getElementById('goal-progress-report').innerHTML = '<p>No goals set yet. Create your first goal!</p>';
+    }
+    
+    // Best/Worst Days
+    const sortedByWellness = entries.map(e => {
+        const sleepScore = Math.min(e.sleep / 8, 1) * 20;
+        const activityScore = Math.min(e.physicalActivity / 30, 1) * 20;
+        const energyScore = (e.energy / 5) * 20;
+        const moodScore = (e.mood / 5) * 20;
+        const screenPenalty = Math.max(0, 20 - (e.screenTime * 2));
+        const wellness = sleepScore + activityScore + energyScore + moodScore + screenPenalty;
+        return { ...e, wellness };
+    }).sort((a, b) => b.wellness - a.wellness);
+    
+    const bestDays = sortedByWellness.slice(0, 3);
+    const worstDays = sortedByWellness.slice(-3).reverse();
+    
+    document.getElementById('best-worst-report').innerHTML = `
+        <div class="mb-3">
+            <h5>🌟 Best Days</h5>
+            ${bestDays.map(d => `<div class="report-stat">${new Date(d.date).toLocaleDateString()}: ${d.wellness.toFixed(0)} wellness score</div>`).join('')}
+        </div>
+        <div>
+            <h5>📉 Days to Improve</h5>
+            ${worstDays.map(d => `<div class="report-stat">${new Date(d.date).toLocaleDateString()}: ${d.wellness.toFixed(0)} wellness score</div>`).join('')}
+        </div>
+    `;
+}
 
 function renderCalendar() {
     const monthYear = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -1320,7 +1290,6 @@ function renderCalendar() {
         
         if (entry) {
             classes.push('has-data');
-            
             const avgScore = (entry.energy + entry.mood) / 2;
             if (avgScore >= 4) classes.push('high-energy');
             else if (avgScore >= 3) classes.push('medium-energy');
@@ -1350,71 +1319,53 @@ function showDayModal(date) {
     
     const modal = document.getElementById('day-modal');
     const formattedDate = new Date(date).toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
     });
     
     document.getElementById('modal-date').textContent = formattedDate;
     
     document.getElementById('modal-stats').innerHTML = `
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Energy</div>
-                <div class="stat-value">${entry.energy}<span class="stat-unit">/5</span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Mood</div>
-                <div class="stat-value">${entry.mood}<span class="stat-unit">/5</span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Sleep</div>
-                <div class="stat-value">${entry.sleep}<span class="stat-unit">h</span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Activity</div>
-                <div class="stat-value">${entry.physicalActivity}<span class="stat-unit">min</span></div>
-            </div>
+            <div class="stat-card"><div class="stat-label">Energy</div><div class="stat-value">${entry.energy}<span class="stat-unit">/5</span></div></div>
+            <div class="stat-card"><div class="stat-label">Mood</div><div class="stat-value">${entry.mood}<span class="stat-unit">/5</span></div></div>
+            <div class="stat-card"><div class="stat-label">Sleep</div><div class="stat-value">${entry.sleep}<span class="stat-unit">h</span></div></div>
+            <div class="stat-card"><div class="stat-label">Activity</div><div class="stat-value">${entry.physicalActivity}<span class="stat-unit">min</span></div></div>
         </div>
     `;
     
     const diarySection = document.getElementById('modal-diary');
     if (entry.diary && entry.diary.trim()) {
-        diarySection.innerHTML = `
-            <h4>Daily Notes</h4>
-            <p>${entry.diary}</p>
-        `;
+        diarySection.innerHTML = `<h4>Daily Notes</h4><p>${entry.diary}</p>`;
         diarySection.style.display = 'block';
     } else {
         diarySection.style.display = 'none';
     }
     
+    const editBtn = document.getElementById('edit-day-btn');
+    if (editBtn) {
+        editBtn.onclick = () => {
+            modal.classList.remove('active');
+            document.getElementById('date').value = date;
+            loadFormData(entry);
+            switchView('input');
+        };
+    }
+    
     modal.classList.add('active');
 }
 
-// ============================================================================
-// Navigation
-// ============================================================================
+let currentCalendarDate = new Date();
 
 function switchView(viewName) {
-    document.querySelectorAll('.view').forEach(view => {
-        view.classList.remove('active');
-    });
+    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
     
     const view = document.getElementById(`${viewName}-view`);
-    if (view) {
-        view.classList.add('active');
-    }
+    if (view) view.classList.add('active');
     
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     
     const activeBtn = document.querySelector(`[data-view="${viewName}"]`);
-    if (activeBtn) {
-        activeBtn.classList.add('active');
-    }
+    if (activeBtn) activeBtn.classList.add('active');
     
     switch(viewName) {
         case 'dashboard':
@@ -1426,15 +1377,111 @@ function switchView(viewName) {
         case 'calendar':
             renderCalendar();
             break;
-        case 'correlations':
-            renderCorrelations();
+        case 'goals':
+            renderGoals();
+            break;
+        case 'reports':
+            renderReports();
             break;
     }
 }
 
-// ============================================================================
-// Initialization
-// ============================================================================
+function initializeSettings() {
+    const settingsBtn = document.getElementById('settings-btn');
+    const modal = document.getElementById('settings-modal');
+    const exportBtn = document.getElementById('export-btn');
+    const importBtn = document.getElementById('import-btn');
+    const importFile = document.getElementById('import-file');
+    const clearBtn = document.getElementById('clear-data-btn');
+    
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+            updateAppStats();
+        });
+    }
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const data = {
+                entries: Storage.getEntries(),
+                habits: Storage.getHabits(),
+                goals: Storage.getGoals(),
+                achievements: Storage.getAchievements(),
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `life-analytics-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            Toast.show('Data exported successfully!');
+        });
+    }
+    
+    if (importBtn && importFile) {
+        importBtn.addEventListener('click', () => importFile.click());
+        
+        importFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.entries) Storage.saveEntries(data.entries);
+                    if (data.habits) Storage.saveHabits(data.habits);
+                    if (data.goals) Storage.saveGoals(data.goals);
+                    if (data.achievements) Storage.saveAchievements(data.achievements);
+                    
+                    Toast.show('Data imported successfully!');
+                    modal.classList.remove('active');
+                    switchView('dashboard');
+                } catch (error) {
+                    Toast.show('Error importing data. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+            importFile.value = '';
+        });
+    }
+    
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete ALL data? This cannot be undone!')) {
+                localStorage.clear();
+                Toast.show('All data cleared');
+                modal.classList.remove('active');
+                switchView('dashboard');
+            }
+        });
+    }
+}
+
+function updateAppStats() {
+    const statsContainer = document.getElementById('app-stats');
+    if (!statsContainer) return;
+    
+    const entries = Storage.getEntries();
+    const habits = Storage.getHabits();
+    const goals = Storage.getGoals();
+    const achievements = Storage.getAchievements();
+    
+    const dataSize = new Blob([JSON.stringify({entries, habits, goals, achievements})]).size;
+    const dataSizeKB = (dataSize / 1024).toFixed(2);
+    
+    statsContainer.innerHTML = `
+        <div class="report-stat">Total Entries: <strong>${entries.length}</strong></div>
+        <div class="report-stat">Habits Tracked: <strong>${habits.length}</strong></div>
+        <div class="report-stat">Active Goals: <strong>${goals.length}</strong></div>
+        <div class="report-stat">Achievements Unlocked: <strong>${achievements.length}/${ACHIEVEMENTS.length}</strong></div>
+        <div class="report-stat">Data Size: <strong>${dataSizeKB} KB</strong></div>
+    `;
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     ThemeManager.init();
@@ -1447,30 +1494,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     initializeForm();
     initializeHabitModal();
-    
-    document.getElementById('undo-btn').addEventListener('click', function() {
-        if (UndoSystem.performUndo()) {
-            Toast.show('Action undone');
-            const activeView = document.querySelector('.nav-btn.active');
-            if (activeView) {
-                switchView(activeView.dataset.view);
-            }
-        }
-    });
+    initializeGoalModal();
+    initializeSettings();
     
     const newWisdomBtn = document.getElementById('new-wisdom');
-    if (newWisdomBtn) {
-        newWisdomBtn.addEventListener('click', displayWisdom);
-    }
+    if (newWisdomBtn) newWisdomBtn.addEventListener('click', displayWisdom);
     
-    document.getElementById('prev-month').addEventListener('click', function() {
+    document.getElementById('prev-month')?.addEventListener('click', function() {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
         renderCalendar();
     });
     
-    document.getElementById('next-month').addEventListener('click', function() {
+    document.getElementById('next-month')?.addEventListener('click', function() {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
         renderCalendar();
+    });
+    
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentPeriod = this.dataset.period === 'all' ? 'all' : parseInt(this.dataset.period);
+            renderTrends();
+        });
     });
     
     document.querySelectorAll('.close-modal').forEach(btn => {
@@ -1481,9 +1527,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-            }
+            if (e.target === this) this.classList.remove('active');
         });
     });
     
