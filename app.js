@@ -1,63 +1,5 @@
-// Life Dashboard App - Main JavaScript
-
+// Life Analytics - Complete Application
 // ============================================================================
-// Constants and Data
-// ============================================================================
-
-const LIFE_TIPS = [
-    "Small habits create big changes.",
-    "A 5-minute break boosts focus.",
-    "Plan your day in the morning to save energy.",
-    "Drink water first thing in the morning.",
-    "Move your body for just 10 minutes daily.",
-    "Deep breaths calm the mind instantly.",
-    "Gratitude shifts perspective powerfully.",
-    "Sleep is the foundation of everything.",
-    "One task at a time beats multitasking.",
-    "Nature time restores mental energy.",
-    "Limit decisions to preserve willpower.",
-    "Morning sunlight regulates your rhythm.",
-    "Progress over perfection, always.",
-    "Saying 'no' protects your energy.",
-    "Track to understand, understand to improve.",
-    "Rest is productive, not lazy.",
-    "Your body keeps the score—listen to it.",
-    "Consistency beats intensity every time.",
-    "Energy management > time management.",
-    "Small wins compound into transformation."
-];
-
-// ============================================================================
-// Theme Management
-// ============================================================================
-
-const ThemeManager = {
-    init() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        this.setTheme(savedTheme);
-        
-        const toggleBtn = document.getElementById('theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => this.toggleTheme());
-        }
-    },
-    
-    setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        
-        const icon = document.querySelector('.theme-icon');
-        if (icon) {
-            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
-        }
-    },
-    
-    toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme') || 'light';
-        const newTheme = current === 'light' ? 'dark' : 'light';
-        this.setTheme(newTheme);
-    }
-};
 
 // ============================================================================
 // Storage Management
@@ -65,12 +7,12 @@ const ThemeManager = {
 
 const Storage = {
     getEntries() {
-        const data = localStorage.getItem('lifeDashboardEntries');
+        const data = localStorage.getItem('lifeAnalyticsEntries');
         return data ? JSON.parse(data) : [];
     },
     
     saveEntries(entries) {
-        localStorage.setItem('lifeDashboardEntries', JSON.stringify(entries));
+        localStorage.setItem('lifeAnalyticsEntries', JSON.stringify(entries));
     },
     
     addEntry(entry) {
@@ -91,61 +33,133 @@ const Storage = {
     getEntryByDate(date) {
         const entries = this.getEntries();
         return entries.find(e => e.date === date);
+    },
+    
+    getHabits() {
+        const data = localStorage.getItem('lifeAnalyticsHabits');
+        return data ? JSON.parse(data) : [];
+    },
+    
+    saveHabits(habits) {
+        localStorage.setItem('lifeAnalyticsHabits', JSON.stringify(habits));
+    },
+    
+    addHabit(habit) {
+        const habits = this.getHabits();
+        habits.push({
+            id: Date.now(),
+            name: habit.name,
+            createdAt: new Date().toISOString()
+        });
+        this.saveHabits(habits);
+        return habits;
+    },
+    
+    deleteHabit(id) {
+        const habits = this.getHabits();
+        const filtered = habits.filter(h => h.id !== id);
+        this.saveHabits(filtered);
+        return filtered;
     }
 };
 
 // ============================================================================
-// Advice Generator
+// Undo System
 // ============================================================================
 
-function generateAdvice(entry) {
-    const advice = [];
+const UndoSystem = {
+    lastAction: null,
     
-    if (entry.sleep < 6) {
-        advice.push("💤 You slept less than 6 hours — prioritize rest tonight or take a short nap.");
-    } else if (entry.sleep >= 8) {
-        advice.push("✨ Great sleep! Your body and mind are well-rested.");
+    saveAction(action, data) {
+        this.lastAction = { action, data, timestamp: Date.now() };
+    },
+    
+    canUndo() {
+        return this.lastAction !== null && 
+               (Date.now() - this.lastAction.timestamp) < 10000; // 10 seconds
+    },
+    
+    performUndo() {
+        if (!this.canUndo()) return false;
+        
+        const { action, data } = this.lastAction;
+        
+        switch(action) {
+            case 'save_entry':
+                // Remove the entry
+                const entries = Storage.getEntries();
+                const filtered = entries.filter(e => e.date !== data.date);
+                Storage.saveEntries(filtered);
+                break;
+                
+            case 'add_habit':
+                Storage.deleteHabit(data.id);
+                break;
+                
+            case 'delete_habit':
+                const habits = Storage.getHabits();
+                habits.push(data);
+                Storage.saveHabits(habits);
+                break;
+        }
+        
+        this.lastAction = null;
+        return true;
     }
+};
+
+// ============================================================================
+// Toast Notifications
+// ============================================================================
+
+const Toast = {
+    show(message, showUndo = false) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        const undoBtn = document.getElementById('undo-btn');
+        
+        toastMessage.textContent = message;
+        undoBtn.style.display = showUndo ? 'block' : 'none';
+        
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 4000);
+    },
     
-    if (entry.foodType === 'skipped') {
-        advice.push("🍽️ You skipped meals — fuel your body with nutritious food for better energy.");
-    } else if (entry.foodType === 'fast-food') {
-        advice.push("🥗 Try adding more whole foods tomorrow for sustained energy.");
-    } else if (entry.foodType === 'healthy') {
-        advice.push("🌟 Healthy eating choice! Your body thanks you.");
+    hide() {
+        const toast = document.getElementById('toast');
+        toast.classList.remove('show');
     }
+};
+
+// ============================================================================
+// Theme Management
+// ============================================================================
+
+const ThemeManager = {
+    init() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        this.setTheme(savedTheme);
+        
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => this.toggleTheme());
+        }
+    },
     
-    if (entry.physicalActivity < 15) {
-        advice.push("🚶 Low activity today — even a 10-minute walk can boost mood and energy.");
-    } else if (entry.physicalActivity >= 30) {
-        advice.push("💪 Excellent physical activity! Movement is medicine.");
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    },
+    
+    toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = current === 'light' ? 'dark' : 'light';
+        this.setTheme(newTheme);
     }
-    
-    if (entry.screenTime > 6) {
-        advice.push("📱 High screen time — try the 20-20-20 rule: every 20 min, look 20 feet away for 20 sec.");
-    }
-    
-    if (entry.energy <= 2) {
-        advice.push("⚡ Low energy detected — consider rest, hydration, or a short walk.");
-    } else if (entry.energy >= 4) {
-        advice.push("🔥 High energy day! Great momentum.");
-    }
-    
-    if (entry.mood <= 2) {
-        advice.push("💙 Tough day emotionally — be kind to yourself. Tomorrow is a fresh start.");
-    } else if (entry.mood >= 4) {
-        advice.push("😊 Positive mood! Notice what contributed to feeling good today.");
-    }
-    
-    const totalTime = entry.workTime + entry.personalTime + entry.socialTime + entry.restTime;
-    if (totalTime > 16) {
-        advice.push("⏰ Time allocation exceeds 24 hours — review and adjust your estimates.");
-    } else if (entry.restTime < 2) {
-        advice.push("🧘 Consider adding more rest/leisure time for better balance.");
-    }
-    
-    return advice.length > 0 ? advice : ["🌱 Keep tracking to discover your patterns and optimize your wellbeing."];
-}
+};
 
 // ============================================================================
 // Chart Management
@@ -167,10 +181,10 @@ function createTimeChart(entry) {
     destroyChart('timeChart');
     
     const data = [
-        { name: 'Work', value: entry.workTime, color: '#FF6B6B' },
-        { name: 'Personal', value: entry.personalTime, color: '#4ECDC4' },
-        { name: 'Social', value: entry.socialTime, color: '#FFE66D' },
-        { name: 'Rest', value: entry.restTime, color: '#A8E6CF' }
+        { name: 'Work', value: entry.workTime, color: '#667eea' },
+        { name: 'Personal', value: entry.personalTime, color: '#10b981' },
+        { name: 'Social', value: entry.socialTime, color: '#f59e0b' },
+        { name: 'Rest', value: entry.restTime, color: '#3b82f6' }
     ].filter(item => item.value > 0);
     
     if (data.length === 0) {
@@ -187,7 +201,8 @@ function createTimeChart(entry) {
             datasets: [{
                 data: data.map(d => d.value),
                 backgroundColor: data.map(d => d.color),
-                borderWidth: 0
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }]
         },
         options: {
@@ -198,7 +213,7 @@ function createTimeChart(entry) {
                     position: 'bottom',
                     labels: {
                         padding: 15,
-                        font: { size: 13, weight: '600' }
+                        font: { size: 12, weight: '500' }
                     }
                 },
                 tooltip: {
@@ -206,6 +221,46 @@ function createTimeChart(entry) {
                         label: (context) => `${context.label}: ${context.parsed}h`
                     }
                 }
+            }
+        }
+    });
+}
+
+function createWeeklyChart() {
+    const canvas = document.getElementById('weeklyChart');
+    if (!canvas) return;
+    
+    destroyChart('weeklyChart');
+    
+    const entries = Storage.getEntries();
+    const last7Days = getLast7DaysData(entries);
+    
+    charts.weeklyChart = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: last7Days.map(d => d.date),
+            datasets: [{
+                label: 'Energy',
+                data: last7Days.map(d => d.energy),
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    max: 5,
+                    ticks: { stepSize: 1 }
+                }
+            },
+            plugins: {
+                legend: { display: false }
             }
         }
     });
@@ -227,18 +282,18 @@ function createTrendCharts() {
                     {
                         label: 'Energy',
                         data: last7Days.map(d => d.energy),
-                        borderColor: '#FF6B6B',
-                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
                         tension: 0.4,
                         fill: true
                     },
                     {
                         label: 'Mood',
                         data: last7Days.map(d => d.mood),
-                        borderColor: '#4ECDC4',
-                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
-                        borderWidth: 3,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
                         tension: 0.4,
                         fill: true
                     }
@@ -248,10 +303,18 @@ function createTrendCharts() {
                 responsive: true,
                 maintainAspectRatio: true,
                 scales: {
-                    y: { beginAtZero: true, max: 5 }
+                    y: { 
+                        beginAtZero: true, 
+                        max: 5,
+                        ticks: { stepSize: 1 }
+                    }
                 },
                 plugins: {
-                    legend: { labels: { font: { size: 13, weight: '600' } } }
+                    legend: { 
+                        labels: { 
+                            font: { size: 12, weight: '500' } 
+                        } 
+                    }
                 }
             }
         });
@@ -269,14 +332,14 @@ function createTrendCharts() {
                     {
                         label: 'Sleep (hours)',
                         data: last7Days.map(d => d.sleep),
-                        backgroundColor: '#A8E6CF',
-                        borderRadius: 8
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 6
                     },
                     {
                         label: 'Activity (min)',
                         data: last7Days.map(d => d.activity),
-                        backgroundColor: '#FFE66D',
-                        borderRadius: 8
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6
                     }
                 ]
             },
@@ -284,7 +347,11 @@ function createTrendCharts() {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { labels: { font: { size: 13, weight: '600' } } }
+                    legend: { 
+                        labels: { 
+                            font: { size: 12, weight: '500' } 
+                        } 
+                    }
                 }
             }
         });
@@ -301,9 +368,9 @@ function createTrendCharts() {
                 datasets: [{
                     label: 'Screen Time (hours)',
                     data: last7Days.map(d => d.screenTime),
-                    borderColor: '#764ba2',
-                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                    borderWidth: 3,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 2,
                     tension: 0.4,
                     fill: true
                 }]
@@ -312,7 +379,11 @@ function createTrendCharts() {
                 responsive: true,
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: { labels: { font: { size: 13, weight: '600' } } }
+                    legend: { 
+                        labels: { 
+                            font: { size: 12, weight: '500' } 
+                        } 
+                    }
                 }
             }
         });
@@ -337,64 +408,258 @@ function getLast7DaysData(entries) {
 }
 
 // ============================================================================
+// Correlation Analysis
+// ============================================================================
+
+function calculateCorrelation(x, y) {
+    const n = x.length;
+    if (n === 0) return 0;
+    
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+    const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
+    
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+    
+    if (denominator === 0) return 0;
+    return numerator / denominator;
+}
+
+function analyzeCorrelations() {
+    const entries = Storage.getEntries();
+    
+    if (entries.length < 7) {
+        return [{
+            title: 'Not Enough Data',
+            description: 'Track at least 7 days to see meaningful patterns and correlations.',
+            strength: 'weak',
+            correlation: 0
+        }];
+    }
+    
+    const correlations = [];
+    
+    // Sleep vs Energy
+    const sleepData = entries.map(e => e.sleep);
+    const energyData = entries.map(e => e.energy);
+    const sleepEnergyCorr = calculateCorrelation(sleepData, energyData);
+    
+    if (Math.abs(sleepEnergyCorr) > 0.3) {
+        const avgSleep = sleepData.reduce((a, b) => a + b, 0) / sleepData.length;
+        correlations.push({
+            title: 'Sleep Quality → Energy Levels',
+            description: `Your sleep and energy levels show a ${sleepEnergyCorr > 0 ? 'positive' : 'negative'} correlation (${(sleepEnergyCorr * 100).toFixed(0)}%). ${
+                sleepEnergyCorr > 0.5 ? 
+                `Getting ${avgSleep >= 7 ? 'adequate' : 'more'} sleep significantly boosts your energy.` :
+                'Consider optimizing your sleep schedule for better energy levels.'
+            }`,
+            strength: Math.abs(sleepEnergyCorr) > 0.7 ? 'strong' : Math.abs(sleepEnergyCorr) > 0.5 ? 'moderate' : 'weak',
+            correlation: sleepEnergyCorr,
+            avgValue: avgSleep.toFixed(1) + 'h'
+        });
+    }
+    
+    // Exercise vs Mood
+    const activityData = entries.map(e => e.physicalActivity);
+    const moodData = entries.map(e => e.mood);
+    const activityMoodCorr = calculateCorrelation(activityData, moodData);
+    
+    if (Math.abs(activityMoodCorr) > 0.3) {
+        const avgActivity = activityData.reduce((a, b) => a + b, 0) / activityData.length;
+        correlations.push({
+            title: 'Physical Activity → Mood',
+            description: `Physical activity and mood show a ${activityMoodCorr > 0 ? 'positive' : 'negative'} relationship (${(activityMoodCorr * 100).toFixed(0)}%). ${
+                activityMoodCorr > 0.5 ?
+                `Days with ${avgActivity >= 30 ? 'regular' : 'more'} exercise tend to have better moods.` :
+                'Consider incorporating more movement into your routine.'
+            }`,
+            strength: Math.abs(activityMoodCorr) > 0.7 ? 'strong' : Math.abs(activityMoodCorr) > 0.5 ? 'moderate' : 'weak',
+            correlation: activityMoodCorr,
+            avgValue: Math.round(avgActivity) + ' min'
+        });
+    }
+    
+    // Screen Time vs Sleep
+    const screenData = entries.map(e => e.screenTime);
+    const screenSleepCorr = calculateCorrelation(screenData, sleepData);
+    
+    if (Math.abs(screenSleepCorr) > 0.3) {
+        const avgScreen = screenData.reduce((a, b) => a + b, 0) / screenData.length;
+        correlations.push({
+            title: 'Screen Time → Sleep Quality',
+            description: `Screen time and sleep show a ${screenSleepCorr < 0 ? 'negative' : 'positive'} correlation (${(screenSleepCorr * 100).toFixed(0)}%). ${
+                screenSleepCorr < -0.3 ?
+                `High screen time (avg ${avgScreen.toFixed(1)}h) may be affecting your sleep quality.` :
+                'Monitor screen time before bed for better sleep.'
+            }`,
+            strength: Math.abs(screenSleepCorr) > 0.7 ? 'strong' : Math.abs(screenSleepCorr) > 0.5 ? 'moderate' : 'weak',
+            correlation: screenSleepCorr,
+            avgValue: avgScreen.toFixed(1) + 'h'
+        });
+    }
+    
+    // Work-Life Balance
+    const workData = entries.map(e => e.workTime || 0);
+    const restData = entries.map(e => e.restTime || 0);
+    const workRestRatio = workData.reduce((a, b) => a + b, 0) / restData.reduce((a, b) => a + b, 0);
+    
+    if (workRestRatio > 2 || workRestRatio < 0.5) {
+        correlations.push({
+            title: 'Work-Life Balance',
+            description: `Your work-to-rest ratio is ${workRestRatio.toFixed(1)}:1. ${
+                workRestRatio > 2 ?
+                'Consider allocating more time for rest and recovery.' :
+                workRestRatio < 0.5 ?
+                'You have good rest time. Ensure work productivity is optimal.' :
+                'Your balance looks healthy.'
+            }`,
+            strength: workRestRatio > 3 || workRestRatio < 0.3 ? 'strong' : 'moderate',
+            correlation: 0,
+            avgValue: workRestRatio.toFixed(1) + ':1'
+        });
+    }
+    
+    if (correlations.length === 0) {
+        correlations.push({
+            title: 'Keep Tracking',
+            description: 'No strong patterns detected yet. Continue tracking to discover meaningful insights about your habits and wellbeing.',
+            strength: 'weak',
+            correlation: 0
+        });
+    }
+    
+    return correlations;
+}
+
+function renderCorrelations() {
+    const container = document.getElementById('correlations-container');
+    if (!container) return;
+    
+    const correlations = analyzeCorrelations();
+    
+    if (correlations.length === 0 || correlations[0].title === 'Not Enough Data') {
+        container.innerHTML = `
+            <div class="no-correlations">
+                <h3>Not Enough Data</h3>
+                <p>Track at least 7 days to discover patterns and correlations in your data.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = correlations.map(corr => `
+        <div class="correlation-card">
+            <div class="correlation-header">
+                <div>
+                    <h3 class="correlation-title">${corr.title}</h3>
+                    <span class="correlation-badge ${corr.strength}">${corr.strength}</span>
+                </div>
+            </div>
+            <p class="correlation-description">${corr.description}</p>
+            ${corr.avgValue ? `
+                <div class="correlation-stats">
+                    <div class="correlation-stat">
+                        <div class="correlation-stat-value">${(corr.correlation * 100).toFixed(0)}%</div>
+                        <div class="correlation-stat-label">Correlation</div>
+                    </div>
+                    <div class="correlation-stat">
+                        <div class="correlation-stat-value">${corr.avgValue}</div>
+                        <div class="correlation-stat-label">Average</div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+// ============================================================================
 // Dashboard Rendering
 // ============================================================================
 
 function renderDashboard() {
-    const today = new Date().toISOString().split('T')[0];
-    const entry = Storage.getEntryByDate(today);
+    // Update date display
+    const dateDisplay = document.getElementById('current-date');
+    if (dateDisplay) {
+        const today = new Date();
+        dateDisplay.textContent = today.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+    }
     
-    // Set daily tip
-    const dailyTip = LIFE_TIPS[Math.floor(Math.random() * LIFE_TIPS.length)];
-    document.getElementById('daily-tip').textContent = dailyTip;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const entry = Storage.getEntryByDate(todayStr);
     
     if (!entry) {
         document.getElementById('today-summary').innerHTML = `
             <div class="no-data">
-                <div class="no-data-icon">📊</div>
-                <h3>No Entry Yet Today</h3>
-                <p>Start tracking your day to unlock insights and advice.</p>
-                <button class="no-data-btn" onclick="switchView('input')">Track Today</button>
+                <h3>No Entry for Today</h3>
+                <p>Start tracking your day to see insights and analytics</p>
             </div>
         `;
         document.getElementById('quick-stats').innerHTML = '';
-        document.getElementById('time-chart-container').style.display = 'none';
-        document.getElementById('insights-card').style.display = 'none';
+        document.getElementById('habits-summary').innerHTML = '';
         return;
     }
     
     // Quick Stats
-    const stats = [
-        { icon: '⚡', label: 'Energy', value: entry.energy, max: 5, color: '#FF6B6B' },
-        { icon: '❤️', label: 'Mood', value: entry.mood, max: 5, color: '#4ECDC4' },
-        { icon: '😴', label: 'Sleep', value: `${entry.sleep}h`, color: '#A8E6CF' },
-        { icon: '🏃', label: 'Activity', value: `${entry.physicalActivity}m`, color: '#FFE66D' }
-    ];
-    
-    document.getElementById('quick-stats').innerHTML = stats.map(stat => `
+    const statsHtml = `
         <div class="stat-card">
-            <div class="stat-header">
-                <span class="stat-icon">${stat.icon}</span>
-                <span>${stat.label}</span>
-            </div>
-            <div class="stat-value">
-                ${stat.value}${stat.max ? `<span class="stat-max">/${stat.max}</span>` : ''}
-            </div>
+            <div class="stat-label">Energy Level</div>
+            <div class="stat-value">${entry.energy}<span class="stat-unit">/5</span></div>
         </div>
-    `).join('');
+        <div class="stat-card">
+            <div class="stat-label">Mood</div>
+            <div class="stat-value">${entry.mood}<span class="stat-unit">/5</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Sleep</div>
+            <div class="stat-value">${entry.sleep}<span class="stat-unit">h</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Activity</div>
+            <div class="stat-value">${entry.physicalActivity}<span class="stat-unit">min</span></div>
+        </div>
+    `;
     
-    // Time Chart
-    document.getElementById('time-chart-container').style.display = 'block';
+    document.getElementById('quick-stats').innerHTML = statsHtml;
+    
+    // Charts
     createTimeChart(entry);
+    createWeeklyChart();
     
-    // Insights
-    const insights = generateAdvice(entry);
-    document.getElementById('insights-card').style.display = 'block';
-    document.getElementById('insights-card').innerHTML = `
-        <h3>🧠 Personal Insights</h3>
-        <ul class="insights-list">
-            ${insights.map(insight => `<li>${insight}</li>`).join('')}
-        </ul>
+    // Habits Summary
+    renderHabitsSummary(entry);
+}
+
+function renderHabitsSummary(entry) {
+    const container = document.getElementById('habits-summary');
+    if (!container) return;
+    
+    const habits = Storage.getHabits();
+    
+    if (habits.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    const completedHabits = entry.habits ? entry.habits.filter(h => h.completed).length : 0;
+    const totalHabits = habits.length;
+    const percentage = totalHabits > 0 ? (completedHabits / totalHabits * 100) : 0;
+    
+    container.innerHTML = `
+        <h3>Today's Habits</h3>
+        <div class="habit-progress">
+            <div class="habit-progress-bar">
+                <div class="habit-progress-fill" style="width: ${percentage}%"></div>
+            </div>
+            <div class="habit-progress-text">${completedHabits}/${totalHabits}</div>
+        </div>
     `;
 }
 
@@ -416,29 +681,32 @@ function initializeForm() {
     }
     
     // Range input updates
-    setupRangeInput('sleep', 'sleep-value', (val) => `${val}h`);
+    setupRangeInput('sleep', 'sleep-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     setupRangeInput('activity', 'activity-value', (val) => `${val} min`);
-    setupRangeInput('screen', 'screen-value', (val) => `${val}h`);
-    setupRangeInput('work-time', 'work-value', (val) => `${val}h`);
-    setupRangeInput('personal-time', 'personal-value', (val) => `${val}h`);
-    setupRangeInput('social-time', 'social-value', (val) => `${val}h`);
-    setupRangeInput('rest-time', 'rest-value', (val) => `${val}h`);
+    setupRangeInput('screen', 'screen-value', (val) => `${parseFloat(val).toFixed(1)}h`);
+    setupRangeInput('work-time', 'work-value', (val) => `${parseFloat(val).toFixed(1)}h`);
+    setupRangeInput('personal-time', 'personal-value', (val) => `${parseFloat(val).toFixed(1)}h`);
+    setupRangeInput('social-time', 'social-value', (val) => `${parseFloat(val).toFixed(1)}h`);
+    setupRangeInput('rest-time', 'rest-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     
     // Food type buttons
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+            this.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
         });
     });
     
-    // Rating buttons - Energy
-    document.querySelectorAll('.rating-group .rating-btn').forEach(btn => {
+    // Rating buttons
+    document.querySelectorAll('.rating-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             this.parentElement.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
         });
     });
+    
+    // Render habits checkboxes
+    renderHabitsForm();
     
     // Form submission
     form.addEventListener('submit', handleFormSubmit);
@@ -449,17 +717,13 @@ function setupRangeInput(inputId, displayId, formatter) {
     const display = document.getElementById(displayId);
     
     if (input && display) {
-        input.addEventListener('input', function() {
-            display.textContent = formatter(this.value);
-            updateRangeBackground(this);
-        });
-        updateRangeBackground(input);
+        const updateDisplay = () => {
+            display.textContent = formatter(input.value);
+        };
+        
+        input.addEventListener('input', updateDisplay);
+        updateDisplay();
     }
-}
-
-function updateRangeBackground(input) {
-    const value = ((input.value - input.min) / (input.max - input.min)) * 100;
-    input.style.background = `linear-gradient(to right, #667eea 0%, #667eea ${value}%, #E2E8F0 ${value}%, #E2E8F0 100%)`;
 }
 
 function loadFormData(entry) {
@@ -471,14 +735,11 @@ function loadFormData(entry) {
     document.getElementById('social-time').value = entry.socialTime || 0;
     document.getElementById('rest-time').value = entry.restTime || 0;
     
-    // Update displays
-    document.getElementById('sleep-value').textContent = `${entry.sleep}h`;
-    document.getElementById('activity-value').textContent = `${entry.physicalActivity} min`;
-    document.getElementById('screen-value').textContent = `${entry.screenTime}h`;
-    document.getElementById('work-value').textContent = `${entry.workTime || 0}h`;
-    document.getElementById('personal-value').textContent = `${entry.personalTime || 0}h`;
-    document.getElementById('social-value').textContent = `${entry.socialTime || 0}h`;
-    document.getElementById('rest-value').textContent = `${entry.restTime || 0}h`;
+    // Trigger range input updates
+    ['sleep', 'activity', 'screen', 'work-time', 'personal-time', 'social-time', 'rest-time'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.dispatchEvent(new Event('input'));
+    });
     
     // Food type
     document.querySelectorAll('.option-btn').forEach(btn => {
@@ -489,7 +750,7 @@ function loadFormData(entry) {
     });
     
     // Energy rating
-    document.querySelectorAll('.rating-group .rating-btn').forEach(btn => {
+    document.querySelectorAll('#energy-rating .rating-btn').forEach(btn => {
         btn.classList.remove('active');
         if (parseInt(btn.dataset.rating) === entry.energy) {
             btn.classList.add('active');
@@ -504,18 +765,37 @@ function loadFormData(entry) {
         }
     });
     
-    // Update range backgrounds
-    ['sleep', 'activity', 'screen', 'work-time', 'personal-time', 'social-time', 'rest-time'].forEach(id => {
-        updateRangeBackground(document.getElementById(id));
-    });
+    // Diary
+    const diaryTextarea = document.getElementById('diary');
+    if (diaryTextarea && entry.diary) {
+        diaryTextarea.value = entry.diary;
+    }
+    
+    // Habits
+    if (entry.habits) {
+        entry.habits.forEach(habit => {
+            const checkbox = document.querySelector(`input[data-habit-id="${habit.id}"]`);
+            if (checkbox) {
+                checkbox.checked = habit.completed;
+            }
+        });
+    }
 }
 
 function handleFormSubmit(e) {
     e.preventDefault();
     
     const foodTypeBtn = document.querySelector('.option-btn.active');
-    const energyBtn = document.querySelector('.rating-group .rating-btn.active');
+    const energyBtn = document.querySelector('#energy-rating .rating-btn.active');
     const moodBtn = document.querySelector('#mood-rating .rating-btn.active');
+    
+    // Collect habit data
+    const habits = Storage.getHabits();
+    const habitData = habits.map(habit => ({
+        id: habit.id,
+        name: habit.name,
+        completed: document.querySelector(`input[data-habit-id="${habit.id}"]`)?.checked || false
+    }));
     
     const entry = {
         date: document.getElementById('date').value,
@@ -529,16 +809,103 @@ function handleFormSubmit(e) {
         personalTime: parseFloat(document.getElementById('personal-time').value),
         socialTime: parseFloat(document.getElementById('social-time').value),
         restTime: parseFloat(document.getElementById('rest-time').value),
+        diary: document.getElementById('diary').value,
+        habits: habitData,
         timestamp: new Date().toISOString()
     };
     
     Storage.addEntry(entry);
+    UndoSystem.saveAction('save_entry', entry);
     
-    // Show success message
-    alert('✅ Entry saved successfully!');
+    Toast.show('Entry saved successfully', true);
     
     // Switch to dashboard
-    switchView('dashboard');
+    setTimeout(() => {
+        switchView('dashboard');
+    }, 500);
+}
+
+// ============================================================================
+// Custom Habits Management
+// ============================================================================
+
+function renderHabitsForm() {
+    const container = document.getElementById('habits-container');
+    if (!container) return;
+    
+    const habits = Storage.getHabits();
+    
+    if (habits.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.875rem;">No habits added yet. Click "Add Habit" to create your first habit.</p>';
+        return;
+    }
+    
+    container.innerHTML = habits.map(habit => `
+        <div class="habit-item">
+            <input type="checkbox" class="habit-checkbox" data-habit-id="${habit.id}">
+            <span class="habit-name">${habit.name}</span>
+            <button type="button" class="habit-delete" data-habit-id="${habit.id}">×</button>
+        </div>
+    `).join('');
+    
+    // Add event listeners
+    container.querySelectorAll('.habit-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            this.closest('.habit-item').classList.toggle('completed', this.checked);
+        });
+    });
+    
+    container.querySelectorAll('.habit-delete').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const habitId = parseInt(this.dataset.habitId);
+            const habit = habits.find(h => h.id === habitId);
+            Storage.deleteHabit(habitId);
+            UndoSystem.saveAction('delete_habit', habit);
+            Toast.show('Habit deleted', true);
+            renderHabitsForm();
+        });
+    });
+}
+
+function initializeHabitModal() {
+    const modal = document.getElementById('habit-modal');
+    const addBtn = document.getElementById('add-habit-btn');
+    const closeBtn = document.getElementById('close-habit-modal');
+    const cancelBtn = document.getElementById('cancel-habit');
+    const form = document.getElementById('add-habit-form');
+    
+    addBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+        document.getElementById('habit-name').value = '';
+    });
+    
+    closeBtn.addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+        }
+    });
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const habitName = document.getElementById('habit-name').value.trim();
+        
+        if (habitName) {
+            const newHabit = Storage.addHabit({ name: habitName });
+            const addedHabit = newHabit[newHabit.length - 1];
+            UndoSystem.saveAction('add_habit', addedHabit);
+            Toast.show('Habit added successfully', true);
+            renderHabitsForm();
+            modal.classList.remove('active');
+        }
+    });
 }
 
 // ============================================================================
@@ -551,7 +918,6 @@ function renderTrends() {
     if (entries.length === 0) {
         document.getElementById('stats-summary').innerHTML = `
             <div class="no-data">
-                <div class="no-data-icon">📈</div>
                 <h3>No Data Yet</h3>
                 <p>Start tracking to see your trends and patterns.</p>
             </div>
@@ -568,7 +934,7 @@ function renderTrends() {
     const avgActivity = Math.round(entries.reduce((sum, e) => sum + e.physicalActivity, 0) / entries.length);
     
     const bestDay = entries.reduce((best, e) => (e.energy + e.mood > best.energy + best.mood) ? e : best);
-    const worstDay = entries.reduce((worst, e) => (e.energy + e.mood < worst.energy + worst.mood) ? e : worst);
+    const mostProductive = entries.reduce((best, e) => ((e.workTime || 0) > (best.workTime || 0)) ? e : best);
     
     document.getElementById('stats-summary').innerHTML = `
         <h3>Summary Statistics</h3>
@@ -597,8 +963,8 @@ function renderTrends() {
             <span class="summary-value">${new Date(bestDay.date).toLocaleDateString()}</span>
         </div>
         <div class="summary-item">
-            <span class="summary-label">Challenging Day</span>
-            <span class="summary-value">${new Date(worstDay.date).toLocaleDateString()}</span>
+            <span class="summary-label">Most Productive</span>
+            <span class="summary-value">${new Date(mostProductive.date).toLocaleDateString()}</span>
         </div>
     `;
 }
@@ -639,7 +1005,6 @@ function renderCalendar() {
         const entry = entries.find(e => e.date === dateStr);
         
         let classes = ['calendar-day'];
-        let content = `<div>${day}</div>`;
         
         if (dateStr === today) classes.push('today');
         
@@ -650,16 +1015,9 @@ function renderCalendar() {
             if (avgScore >= 4) classes.push('high-energy');
             else if (avgScore >= 3) classes.push('medium-energy');
             else classes.push('low-energy');
-            
-            const moodEmojis = ['😞', '😕', '😐', '😊', '😄'];
-            content += `<div class="mood-indicator">${moodEmojis[entry.mood - 1] || '😐'}</div>`;
         }
         
-        html += `
-            <div class="${classes.join(' ')}" data-date="${dateStr}">
-                ${content}
-            </div>
-        `;
+        html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${day}</div>`;
     }
     
     // Next month's leading days
@@ -695,45 +1053,34 @@ function showDayModal(date) {
     document.getElementById('modal-stats').innerHTML = `
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-icon">⚡</span>
-                    <span>Energy</span>
-                </div>
-                <div class="stat-value">${entry.energy}<span class="stat-max">/5</span></div>
+                <div class="stat-label">Energy</div>
+                <div class="stat-value">${entry.energy}<span class="stat-unit">/5</span></div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-icon">❤️</span>
-                    <span>Mood</span>
-                </div>
-                <div class="stat-value">${entry.mood}<span class="stat-max">/5</span></div>
+                <div class="stat-label">Mood</div>
+                <div class="stat-value">${entry.mood}<span class="stat-unit">/5</span></div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-icon">😴</span>
-                    <span>Sleep</span>
-                </div>
-                <div class="stat-value">${entry.sleep}h</div>
+                <div class="stat-label">Sleep</div>
+                <div class="stat-value">${entry.sleep}<span class="stat-unit">h</span></div>
             </div>
             <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-icon">🏃</span>
-                    <span>Activity</span>
-                </div>
-                <div class="stat-value">${entry.physicalActivity}m</div>
+                <div class="stat-label">Activity</div>
+                <div class="stat-value">${entry.physicalActivity}<span class="stat-unit">min</span></div>
             </div>
         </div>
     `;
     
-    const insights = generateAdvice(entry);
-    document.getElementById('modal-insights').innerHTML = `
-        <div class="insights-card">
-            <h3>🧠 Insights for this day</h3>
-            <ul class="insights-list">
-                ${insights.map(insight => `<li>${insight}</li>`).join('')}
-            </ul>
-        </div>
-    `;
+    const diarySection = document.getElementById('modal-diary');
+    if (entry.diary && entry.diary.trim()) {
+        diarySection.innerHTML = `
+            <h4>Daily Notes</h4>
+            <p>${entry.diary}</p>
+        `;
+        diarySection.style.display = 'block';
+    } else {
+        diarySection.style.display = 'none';
+    }
     
     modal.classList.add('active');
 }
@@ -775,6 +1122,9 @@ function switchView(viewName) {
         case 'calendar':
             renderCalendar();
             break;
+        case 'correlations':
+            renderCorrelations();
+            break;
     }
 }
 
@@ -796,6 +1146,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize form
     initializeForm();
     
+    // Initialize habit modal
+    initializeHabitModal();
+    
+    // Initialize undo button
+    document.getElementById('undo-btn').addEventListener('click', function() {
+        if (UndoSystem.performUndo()) {
+            Toast.show('Action undone');
+            // Refresh current view
+            const activeView = document.querySelector('.nav-btn.active');
+            if (activeView) {
+                switchView(activeView.dataset.view);
+            }
+        }
+    });
+    
     // Calendar navigation
     document.getElementById('prev-month').addEventListener('click', function() {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
@@ -808,14 +1173,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Modal close
-    document.querySelector('.close-modal').addEventListener('click', function() {
-        document.getElementById('day-modal').classList.remove('active');
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.modal').classList.remove('active');
+        });
     });
     
-    document.getElementById('day-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.remove('active');
-        }
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
     });
     
     // Initial render
