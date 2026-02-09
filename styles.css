@@ -1,5 +1,5 @@
 /* ============================================================================
-   Life Analytics - Professional Design System
+   Life Analytics - Professional Design System with Enhanced Features
    ============================================================================ */
 
 :root {
@@ -28,10 +28,13 @@
     
     --success: #10b981;
     --success-light: #d1fae5;
+    --success-dark: #059669;
     --warning: #f59e0b;
     --warning-light: #fef3c7;
+    --warning-dark: #d97706;
     --danger: #ef4444;
     --danger-light: #fee2e2;
+    --danger-dark: #dc2626;
     --info: #3b82f6;
     --info-light: #dbeafe;
     
@@ -210,6 +213,189 @@ body {
 }
 
 /* ============================================================================
+   Wisdom Card
+   ============================================================================ */
+
+.wisdom-card {
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-6);
+    margin-bottom: var(--spacing-6);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    position: relative;
+    overflow: hidden;
+}
+
+.wisdom-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.wisdom-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.wisdom-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-4);
+}
+
+.wisdom-text {
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.wisdom-refresh {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-md);
+    color: white;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.wisdom-refresh:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(180deg);
+}
+
+@media (max-width: 640px) {
+    .wisdom-card {
+        padding: var(--spacing-4);
+    }
+    
+    .wisdom-icon {
+        font-size: 2rem;
+    }
+    
+    .wisdom-text {
+        font-size: 0.938rem;
+    }
+}
+
+/* ============================================================================
+   Personal Suggestions
+   ============================================================================ */
+
+.suggestions-container {
+    margin-bottom: var(--spacing-6);
+}
+
+.suggestions-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-4);
+}
+
+.suggestions-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+    .suggestions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.suggestion-card {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-4);
+    display: flex;
+    gap: var(--spacing-3);
+    border-left: 4px solid;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+}
+
+.suggestion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.suggestion-card.good {
+    border-left-color: var(--success);
+    background: linear-gradient(to right, var(--success-light) 0%, var(--bg-elevated) 20%);
+}
+
+.suggestion-card.bad {
+    border-left-color: var(--danger);
+    background: linear-gradient(to right, var(--danger-light) 0%, var(--bg-elevated) 20%);
+}
+
+.suggestion-card.neutral {
+    border-left-color: var(--warning);
+    background: linear-gradient(to right, var(--warning-light) 0%, var(--bg-elevated) 20%);
+}
+
+.suggestion-icon {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.suggestion-content {
+    flex: 1;
+}
+
+.suggestion-title {
+    font-size: 0.938rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-1);
+}
+
+.suggestion-card.good .suggestion-title {
+    color: var(--success-dark);
+}
+
+.suggestion-card.bad .suggestion-title {
+    color: var(--danger-dark);
+}
+
+.suggestion-card.neutral .suggestion-title {
+    color: var(--warning-dark);
+}
+
+.suggestion-message {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ============================================================================
    Main Content & Views
    ============================================================================ */
 
@@ -263,6 +449,12 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--spacing-4);
     margin-bottom: var(--spacing-6);
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .stat-card {
@@ -326,6 +518,12 @@ body {
     margin-bottom: var(--spacing-6);
 }
 
+@media (max-width: 768px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+}
+
 .charts-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -339,11 +537,22 @@ body {
     }
 }
 
+@media (min-width: 1024px) {
+    .charts-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 .chart-card {
     background: var(--bg-elevated);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-6);
+    transition: all var(--transition-base);
+}
+
+.chart-card:hover {
+    box-shadow: var(--shadow-md);
 }
 
 .chart-card h3 {
@@ -355,6 +564,16 @@ body {
 
 .chart-card canvas {
     max-height: 300px;
+}
+
+@media (max-width: 640px) {
+    .chart-card {
+        padding: var(--spacing-4);
+    }
+    
+    .chart-card canvas {
+        max-height: 250px;
+    }
 }
 
 /* ============================================================================
@@ -1230,10 +1449,6 @@ input[type="range"]::-moz-range-thumb {
         padding: 0 var(--spacing-3);
     }
     
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
     .button-group {
         grid-template-columns: 1fr;
     }
@@ -1265,6 +1480,18 @@ input[type="range"]::-moz-range-thumb {
 [data-theme="dark"] .undo-btn {
     background: var(--primary-500);
     color: white;
+}
+
+[data-theme="dark"] .suggestion-card.good {
+    background: linear-gradient(to right, rgba(16, 185, 129, 0.2) 0%, var(--bg-elevated) 20%);
+}
+
+[data-theme="dark"] .suggestion-card.bad {
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.2) 0%, var(--bg-elevated) 20%);
+}
+
+[data-theme="dark"] .suggestion-card.neutral {
+    background: linear-gradient(to right, rgba(245, 158, 11, 0.2) 0%, var(--bg-elevated) 20%);
 }
 
 /* ============================================================================

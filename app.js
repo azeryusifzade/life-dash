@@ -1,5 +1,47 @@
-// Life Analytics - Complete Application
+// Life Analytics - Complete Application with Enhanced Analytics
 // ============================================================================
+
+// ============================================================================
+// Wisdom Quotes
+// ============================================================================
+
+const wisdomQuotes = [
+    "Small daily improvements are the key to staggering long-term results.",
+    "What you do today can improve all your tomorrows.",
+    "Success is the sum of small efforts repeated day in and day out.",
+    "The secret of getting ahead is getting started.",
+    "Your health is an investment, not an expense.",
+    "Sleep is the best meditation.",
+    "Take care of your body. It's the only place you have to live.",
+    "Progress, not perfection.",
+    "Every day is a new beginning. Take a deep breath and start again.",
+    "The only bad workout is the one that didn't happen.",
+    "Be stronger than your excuses.",
+    "Your body hears everything your mind says. Stay positive.",
+    "Consistency is what transforms average into excellence.",
+    "Small steps in the right direction can turn out to be the biggest step of your life.",
+    "Energy and persistence conquer all things.",
+    "The groundwork of all happiness is health.",
+    "Discipline is choosing between what you want now and what you want most.",
+    "You don't have to be great to start, but you have to start to be great.",
+    "The only person you should try to be better than is the person you were yesterday.",
+    "Your future self is watching you right now through memories."
+];
+
+function getRandomWisdom() {
+    return wisdomQuotes[Math.floor(Math.random() * wisdomQuotes.length)];
+}
+
+function displayWisdom() {
+    const wisdomText = document.getElementById('wisdom-text');
+    if (wisdomText) {
+        wisdomText.textContent = getRandomWisdom();
+        wisdomText.style.animation = 'fadeIn 0.5s ease';
+        setTimeout(() => {
+            wisdomText.style.animation = '';
+        }, 500);
+    }
+}
 
 // ============================================================================
 // Storage Management
@@ -76,7 +118,7 @@ const UndoSystem = {
     
     canUndo() {
         return this.lastAction !== null && 
-               (Date.now() - this.lastAction.timestamp) < 10000; // 10 seconds
+               (Date.now() - this.lastAction.timestamp) < 10000;
     },
     
     performUndo() {
@@ -86,7 +128,6 @@ const UndoSystem = {
         
         switch(action) {
             case 'save_entry':
-                // Remove the entry
                 const entries = Storage.getEntries();
                 const filtered = entries.filter(e => e.date !== data.date);
                 Storage.saveEntries(filtered);
@@ -388,6 +429,135 @@ function createTrendCharts() {
             }
         });
     }
+
+    // Food Quality Pie Chart
+    const foodCanvas = document.getElementById('foodQualityChart');
+    if (foodCanvas && entries.length > 0) {
+        destroyChart('foodQualityChart');
+        
+        const foodCounts = entries.reduce((acc, e) => {
+            acc[e.foodType] = (acc[e.foodType] || 0) + 1;
+            return acc;
+        }, {});
+        
+        charts.foodQualityChart = new Chart(foodCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(foodCounts).map(k => k === 'healthy' ? 'Healthy' : k === 'fast-food' ? 'Fast Food' : 'Skipped'),
+                datasets: [{
+                    data: Object.values(foodCounts),
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: { size: 12, weight: '500' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Daily Balance Chart
+    const balanceCanvas = document.getElementById('balanceChart');
+    if (balanceCanvas) {
+        destroyChart('balanceChart');
+        
+        const avgData = {
+            work: entries.reduce((sum, e) => sum + (e.workTime || 0), 0) / entries.length || 0,
+            personal: entries.reduce((sum, e) => sum + (e.personalTime || 0), 0) / entries.length || 0,
+            social: entries.reduce((sum, e) => sum + (e.socialTime || 0), 0) / entries.length || 0,
+            rest: entries.reduce((sum, e) => sum + (e.restTime || 0), 0) / entries.length || 0
+        };
+        
+        charts.balanceChart = new Chart(balanceCanvas, {
+            type: 'polarArea',
+            data: {
+                labels: ['Work', 'Personal', 'Social', 'Rest'],
+                datasets: [{
+                    data: [avgData.work, avgData.personal, avgData.social, avgData.rest],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.6)',
+                        'rgba(16, 185, 129, 0.6)',
+                        'rgba(245, 158, 11, 0.6)',
+                        'rgba(59, 130, 246, 0.6)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 12, weight: '500' }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Productivity Score Chart
+    const productivityCanvas = document.getElementById('productivityChart');
+    if (productivityCanvas) {
+        destroyChart('productivityChart');
+        
+        const productivityScores = last7Days.map(d => {
+            const entry = entries.find(e => new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === d.date);
+            if (!entry) return 0;
+            
+            // Calculate productivity score based on multiple factors
+            const sleepScore = Math.min(entry.sleep / 8, 1) * 20;
+            const activityScore = Math.min(entry.activity / 30, 1) * 20;
+            const energyScore = (entry.energy / 5) * 20;
+            const moodScore = (entry.mood / 5) * 20;
+            const screenPenalty = Math.max(0, 20 - (entry.screenTime * 2));
+            
+            return sleepScore + activityScore + energyScore + moodScore + screenPenalty;
+        });
+        
+        charts.productivityChart = new Chart(productivityCanvas, {
+            type: 'bar',
+            data: {
+                labels: last7Days.map(d => d.date),
+                datasets: [{
+                    label: 'Productivity Score',
+                    data: productivityScores,
+                    backgroundColor: productivityScores.map(score => 
+                        score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'
+                    ),
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
 }
 
 function getLast7DaysData(entries) {
@@ -405,6 +575,171 @@ function getLast7DaysData(entries) {
             screenTime: entry?.screenTime || 0
         };
     });
+}
+
+// ============================================================================
+// Personal Suggestions
+// ============================================================================
+
+function generateSuggestions(entry) {
+    const suggestions = [];
+    
+    // Sleep analysis
+    if (entry.sleep < 6) {
+        suggestions.push({
+            type: 'bad',
+            icon: '😴',
+            title: 'Insufficient Sleep',
+            message: `You only slept ${entry.sleep} hours. Aim for 7-9 hours for optimal health and energy.`
+        });
+    } else if (entry.sleep >= 7 && entry.sleep <= 9) {
+        suggestions.push({
+            type: 'good',
+            icon: '✨',
+            title: 'Great Sleep',
+            message: `Excellent! ${entry.sleep} hours is within the recommended range. Keep it up!`
+        });
+    } else if (entry.sleep > 9) {
+        suggestions.push({
+            type: 'neutral',
+            icon: '💤',
+            title: 'Extra Sleep',
+            message: `You slept ${entry.sleep} hours. While rest is important, oversleeping may indicate other issues.`
+        });
+    }
+    
+    // Physical activity
+    if (entry.physicalActivity < 20) {
+        suggestions.push({
+            type: 'bad',
+            icon: '🏃',
+            title: 'Low Activity',
+            message: `Only ${entry.physicalActivity} minutes of activity. Try to get at least 30 minutes daily.`
+        });
+    } else if (entry.physicalActivity >= 30) {
+        suggestions.push({
+            type: 'good',
+            icon: '💪',
+            title: 'Active Day',
+            message: `Great job! ${entry.physicalActivity} minutes of activity contributes to better health.`
+        });
+    }
+    
+    // Screen time
+    if (entry.screenTime > 6) {
+        suggestions.push({
+            type: 'bad',
+            icon: '📱',
+            title: 'High Screen Time',
+            message: `${entry.screenTime} hours is quite high. Consider reducing screen time for better sleep and focus.`
+        });
+    } else if (entry.screenTime <= 4) {
+        suggestions.push({
+            type: 'good',
+            icon: '👁️',
+            title: 'Healthy Screen Time',
+            message: `Good balance! ${entry.screenTime} hours of screen time is manageable.`
+        });
+    }
+    
+    // Food quality
+    if (entry.foodType === 'fast-food') {
+        suggestions.push({
+            type: 'bad',
+            icon: '🍔',
+            title: 'Fast Food Alert',
+            message: 'Try to include more whole foods in your diet for better energy and health.'
+        });
+    } else if (entry.foodType === 'healthy') {
+        suggestions.push({
+            type: 'good',
+            icon: '🥗',
+            title: 'Healthy Eating',
+            message: 'Excellent food choices! Nutritious meals fuel your body and mind.'
+        });
+    } else if (entry.foodType === 'skipped') {
+        suggestions.push({
+            type: 'bad',
+            icon: '⚠️',
+            title: 'Skipped Meals',
+            message: 'Regular meals are important for maintaining energy and metabolism.'
+        });
+    }
+    
+    // Energy and mood correlation
+    if (entry.energy <= 2 || entry.mood <= 2) {
+        suggestions.push({
+            type: 'bad',
+            icon: '😔',
+            title: 'Low Energy/Mood',
+            message: 'Consider reviewing your sleep, diet, and activity levels. Small changes can make a big difference.'
+        });
+    } else if (entry.energy >= 4 && entry.mood >= 4) {
+        suggestions.push({
+            type: 'good',
+            icon: '😊',
+            title: 'Feeling Great',
+            message: 'Your energy and mood are excellent! Keep up whatever you\'re doing right.'
+        });
+    }
+    
+    // Work-life balance
+    const totalTime = (entry.workTime || 0) + (entry.personalTime || 0) + (entry.socialTime || 0) + (entry.restTime || 0);
+    if (totalTime > 0) {
+        const workPercent = ((entry.workTime || 0) / totalTime) * 100;
+        if (workPercent > 60) {
+            suggestions.push({
+                type: 'bad',
+                icon: '⚖️',
+                title: 'Work-Life Imbalance',
+                message: 'Work is taking up most of your time. Remember to balance with rest and personal activities.'
+            });
+        } else if (workPercent >= 30 && workPercent <= 50) {
+            suggestions.push({
+                type: 'good',
+                icon: '🎯',
+                title: 'Good Balance',
+                message: 'You have a healthy work-life balance. This supports long-term wellbeing.'
+            });
+        }
+    }
+    
+    return suggestions;
+}
+
+function renderSuggestions() {
+    const container = document.getElementById('suggestions-container');
+    if (!container) return;
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    const entry = Storage.getEntryByDate(todayStr);
+    
+    if (!entry) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    const suggestions = generateSuggestions(entry);
+    
+    if (suggestions.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = `
+        <h3 class="suggestions-title">Personal Suggestions</h3>
+        <div class="suggestions-grid">
+            ${suggestions.map(s => `
+                <div class="suggestion-card ${s.type}">
+                    <div class="suggestion-icon">${s.icon}</div>
+                    <div class="suggestion-content">
+                        <h4 class="suggestion-title">${s.title}</h4>
+                        <p class="suggestion-message">${s.message}</p>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 // ============================================================================
@@ -442,7 +777,6 @@ function analyzeCorrelations() {
     
     const correlations = [];
     
-    // Sleep vs Energy
     const sleepData = entries.map(e => e.sleep);
     const energyData = entries.map(e => e.energy);
     const sleepEnergyCorr = calculateCorrelation(sleepData, energyData);
@@ -462,7 +796,6 @@ function analyzeCorrelations() {
         });
     }
     
-    // Exercise vs Mood
     const activityData = entries.map(e => e.physicalActivity);
     const moodData = entries.map(e => e.mood);
     const activityMoodCorr = calculateCorrelation(activityData, moodData);
@@ -482,7 +815,6 @@ function analyzeCorrelations() {
         });
     }
     
-    // Screen Time vs Sleep
     const screenData = entries.map(e => e.screenTime);
     const screenSleepCorr = calculateCorrelation(screenData, sleepData);
     
@@ -501,10 +833,9 @@ function analyzeCorrelations() {
         });
     }
     
-    // Work-Life Balance
     const workData = entries.map(e => e.workTime || 0);
     const restData = entries.map(e => e.restTime || 0);
-    const workRestRatio = workData.reduce((a, b) => a + b, 0) / restData.reduce((a, b) => a + b, 0);
+    const workRestRatio = workData.reduce((a, b) => a + b, 0) / (restData.reduce((a, b) => a + b, 0) || 1);
     
     if (workRestRatio > 2 || workRestRatio < 0.5) {
         correlations.push({
@@ -580,7 +911,6 @@ function renderCorrelations() {
 // ============================================================================
 
 function renderDashboard() {
-    // Update date display
     const dateDisplay = document.getElementById('current-date');
     if (dateDisplay) {
         const today = new Date();
@@ -591,6 +921,8 @@ function renderDashboard() {
             day: 'numeric' 
         });
     }
+    
+    displayWisdom();
     
     const todayStr = new Date().toISOString().split('T')[0];
     const entry = Storage.getEntryByDate(todayStr);
@@ -604,10 +936,10 @@ function renderDashboard() {
         `;
         document.getElementById('quick-stats').innerHTML = '';
         document.getElementById('habits-summary').innerHTML = '';
+        document.getElementById('suggestions-container').innerHTML = '';
         return;
     }
     
-    // Quick Stats
     const statsHtml = `
         <div class="stat-card">
             <div class="stat-label">Energy Level</div>
@@ -629,11 +961,9 @@ function renderDashboard() {
     
     document.getElementById('quick-stats').innerHTML = statsHtml;
     
-    // Charts
+    renderSuggestions();
     createTimeChart(entry);
     createWeeklyChart();
-    
-    // Habits Summary
     renderHabitsSummary(entry);
 }
 
@@ -671,16 +1001,13 @@ function initializeForm() {
     const form = document.getElementById('daily-form');
     const today = new Date().toISOString().split('T')[0];
     
-    // Set today's date
     document.getElementById('date').value = today;
     
-    // Load existing entry if available
     const entry = Storage.getEntryByDate(today);
     if (entry) {
         loadFormData(entry);
     }
     
-    // Range input updates
     setupRangeInput('sleep', 'sleep-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     setupRangeInput('activity', 'activity-value', (val) => `${val} min`);
     setupRangeInput('screen', 'screen-value', (val) => `${parseFloat(val).toFixed(1)}h`);
@@ -689,7 +1016,6 @@ function initializeForm() {
     setupRangeInput('social-time', 'social-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     setupRangeInput('rest-time', 'rest-value', (val) => `${parseFloat(val).toFixed(1)}h`);
     
-    // Food type buttons
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             this.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
@@ -697,7 +1023,6 @@ function initializeForm() {
         });
     });
     
-    // Rating buttons
     document.querySelectorAll('.rating-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             this.parentElement.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('active'));
@@ -705,10 +1030,7 @@ function initializeForm() {
         });
     });
     
-    // Render habits checkboxes
     renderHabitsForm();
-    
-    // Form submission
     form.addEventListener('submit', handleFormSubmit);
 }
 
@@ -735,13 +1057,11 @@ function loadFormData(entry) {
     document.getElementById('social-time').value = entry.socialTime || 0;
     document.getElementById('rest-time').value = entry.restTime || 0;
     
-    // Trigger range input updates
     ['sleep', 'activity', 'screen', 'work-time', 'personal-time', 'social-time', 'rest-time'].forEach(id => {
         const input = document.getElementById(id);
         if (input) input.dispatchEvent(new Event('input'));
     });
     
-    // Food type
     document.querySelectorAll('.option-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.food === entry.foodType) {
@@ -749,7 +1069,6 @@ function loadFormData(entry) {
         }
     });
     
-    // Energy rating
     document.querySelectorAll('#energy-rating .rating-btn').forEach(btn => {
         btn.classList.remove('active');
         if (parseInt(btn.dataset.rating) === entry.energy) {
@@ -757,7 +1076,6 @@ function loadFormData(entry) {
         }
     });
     
-    // Mood rating
     document.querySelectorAll('#mood-rating .rating-btn').forEach(btn => {
         btn.classList.remove('active');
         if (parseInt(btn.dataset.rating) === entry.mood) {
@@ -765,13 +1083,11 @@ function loadFormData(entry) {
         }
     });
     
-    // Diary
     const diaryTextarea = document.getElementById('diary');
     if (diaryTextarea && entry.diary) {
         diaryTextarea.value = entry.diary;
     }
     
-    // Habits
     if (entry.habits) {
         entry.habits.forEach(habit => {
             const checkbox = document.querySelector(`input[data-habit-id="${habit.id}"]`);
@@ -789,7 +1105,6 @@ function handleFormSubmit(e) {
     const energyBtn = document.querySelector('#energy-rating .rating-btn.active');
     const moodBtn = document.querySelector('#mood-rating .rating-btn.active');
     
-    // Collect habit data
     const habits = Storage.getHabits();
     const habitData = habits.map(habit => ({
         id: habit.id,
@@ -819,7 +1134,6 @@ function handleFormSubmit(e) {
     
     Toast.show('Entry saved successfully', true);
     
-    // Switch to dashboard
     setTimeout(() => {
         switchView('dashboard');
     }, 500);
@@ -848,7 +1162,6 @@ function renderHabitsForm() {
         </div>
     `).join('');
     
-    // Add event listeners
     container.querySelectorAll('.habit-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             this.closest('.habit-item').classList.toggle('completed', this.checked);
@@ -927,7 +1240,6 @@ function renderTrends() {
     
     createTrendCharts();
     
-    // Calculate summary statistics
     const avgEnergy = (entries.reduce((sum, e) => sum + e.energy, 0) / entries.length).toFixed(1);
     const avgMood = (entries.reduce((sum, e) => sum + e.mood, 0) / entries.length).toFixed(1);
     const avgSleep = (entries.reduce((sum, e) => sum + e.sleep, 0) / entries.length).toFixed(1);
@@ -991,14 +1303,12 @@ function renderCalendar() {
     
     let html = '';
     
-    // Previous month's trailing days
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
         const day = prevMonthLastDay - i;
         html += `<div class="calendar-day other-month">${day}</div>`;
     }
     
-    // Current month's days
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateStr = date.toISOString().split('T')[0];
@@ -1020,7 +1330,6 @@ function renderCalendar() {
         html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${day}</div>`;
     }
     
-    // Next month's leading days
     const remainingDays = 42 - (startingDayOfWeek + daysInMonth);
     for (let day = 1; day <= remainingDays; day++) {
         html += `<div class="calendar-day other-month">${day}</div>`;
@@ -1028,7 +1337,6 @@ function renderCalendar() {
     
     document.getElementById('calendar-days').innerHTML = html;
     
-    // Add click handlers
     document.querySelectorAll('.calendar-day.has-data').forEach(day => {
         day.addEventListener('click', function() {
             showDayModal(this.dataset.date);
@@ -1090,18 +1398,15 @@ function showDayModal(date) {
 // ============================================================================
 
 function switchView(viewName) {
-    // Hide all views
     document.querySelectorAll('.view').forEach(view => {
         view.classList.remove('active');
     });
     
-    // Show selected view
     const view = document.getElementById(`${viewName}-view`);
     if (view) {
         view.classList.add('active');
     }
     
-    // Update navigation buttons
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -1111,7 +1416,6 @@ function switchView(viewName) {
         activeBtn.classList.add('active');
     }
     
-    // Render view-specific content
     switch(viewName) {
         case 'dashboard':
             renderDashboard();
@@ -1133,27 +1437,20 @@ function switchView(viewName) {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize theme
     ThemeManager.init();
     
-    // Initialize navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             switchView(this.dataset.view);
         });
     });
     
-    // Initialize form
     initializeForm();
-    
-    // Initialize habit modal
     initializeHabitModal();
     
-    // Initialize undo button
     document.getElementById('undo-btn').addEventListener('click', function() {
         if (UndoSystem.performUndo()) {
             Toast.show('Action undone');
-            // Refresh current view
             const activeView = document.querySelector('.nav-btn.active');
             if (activeView) {
                 switchView(activeView.dataset.view);
@@ -1161,7 +1458,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Calendar navigation
+    const newWisdomBtn = document.getElementById('new-wisdom');
+    if (newWisdomBtn) {
+        newWisdomBtn.addEventListener('click', displayWisdom);
+    }
+    
     document.getElementById('prev-month').addEventListener('click', function() {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
         renderCalendar();
@@ -1172,7 +1473,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCalendar();
     });
     
-    // Modal close
     document.querySelectorAll('.close-modal').forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.modal').classList.remove('active');
@@ -1187,6 +1487,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Initial render
     renderDashboard();
 });
