@@ -1485,6 +1485,10 @@ input[type="range"]::-moz-range-thumb {
     transition: all var(--transition-base);
 }
 
+.toast {
+    bottom: calc(env(safe-area-inset-bottom) + 90px + 1rem);
+}
+
 .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -1494,6 +1498,15 @@ input[type="range"]::-moz-range-thumb {
     display: flex;
     align-items: center;
     gap: var(--spacing-4);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast .undo-btn {
+    pointer-events: auto;
 }
 
 .undo-btn {
