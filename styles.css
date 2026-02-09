@@ -1,26 +1,52 @@
 :root {
-    --primary: #667eea;
-    --primary-dark: #5568d3;
-    --secondary: #764ba2;
-    --accent: #f093fb;
-    --success: #4ECDC4;
-    --warning: #FFE66D;
-    --danger: #FF6B6B;
-    --calm: #A8E6CF;
+    /* Light Theme */
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --secondary: #8b5cf6;
+    --accent: #ec4899;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --calm: #6ee7b7;
     
-    --bg-primary: #f8f9fa;
+    --bg-primary: #f9fafb;
     --bg-secondary: #ffffff;
-    --text-primary: #2D3748;
-    --text-secondary: #718096;
-    --border: #E2E8F0;
+    --bg-tertiary: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --shadow-color: rgba(0, 0, 0, 0.1);
     
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 24px rgba(102, 126, 234, 0.15);
+    --shadow-sm: 0 1px 3px var(--shadow-color);
+    --shadow-md: 0 4px 12px var(--shadow-color);
+    --shadow-lg: 0 10px 30px rgba(99, 102, 241, 0.2);
     
     --radius: 16px;
-    --radius-lg: 20px;
+    --radius-lg: 24px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+    --primary: #818cf8;
+    --primary-dark: #6366f1;
+    --secondary: #a78bfa;
+    --accent: #f472b6;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --calm: #6ee7b7;
+    
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    
+    --shadow-sm: 0 1px 3px var(--shadow-color);
+    --shadow-md: 0 4px 12px var(--shadow-color);
+    --shadow-lg: 0 10px 30px rgba(129, 140, 248, 0.3);
 }
 
 * {
@@ -30,12 +56,13 @@
 }
 
 body {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
     padding-bottom: 80px;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -52,6 +79,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 50;
+    backdrop-filter: blur(10px);
 }
 
 .logo {
@@ -117,6 +145,7 @@ body {
     box-shadow: var(--shadow-lg);
     position: relative;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tip-card::before {
@@ -341,12 +370,18 @@ body {
     background: var(--bg-secondary);
 }
 
-.form-group input[type="date"]:focus,
-.form-group input[type="text"]:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.form-group input[type="date"],
+.form-group input[type="text"],
+.form-group select {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: var(--transition);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 /* Range Inputs */
@@ -404,8 +439,8 @@ body {
     padding: 12px;
     border: 2px solid var(--border);
     border-radius: 12px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 600;
     font-family: inherit;
@@ -419,8 +454,8 @@ body {
 
 .option-btn.active {
     border-color: var(--primary);
-    background: #EEF2FF;
-    color: var(--primary);
+    background: var(--primary);
+    color: white;
 }
 
 /* Rating Buttons */
@@ -435,8 +470,8 @@ body {
     padding: 16px 8px;
     border: 2px solid var(--border);
     border-radius: 12px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     font-size: 20px;
     font-weight: 700;
     font-family: inherit;
@@ -450,8 +485,8 @@ body {
 
 .rating-btn.active {
     border-color: var(--success);
-    background: #F0FDFA;
-    color: var(--success);
+    background: var(--success);
+    color: white;
 }
 
 /* Time Inputs */
@@ -822,4 +857,38 @@ body {
     body {
         padding-bottom: 0;
     }
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.theme-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(20deg) scale(1.1);
+}
+
+.theme-icon {
+    font-size: 24px;
+    transition: var(--transition);
+}
+
+[data-theme="dark"] .theme-icon {
+    content: '☀️';
 }

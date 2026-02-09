@@ -28,6 +28,38 @@ const LIFE_TIPS = [
 ];
 
 // ============================================================================
+// Theme Management
+// ============================================================================
+
+const ThemeManager = {
+    init() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        this.setTheme(savedTheme);
+        
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => this.toggleTheme());
+        }
+    },
+    
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        const icon = document.querySelector('.theme-icon');
+        if (icon) {
+            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+    },
+    
+    toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = current === 'light' ? 'dark' : 'light';
+        this.setTheme(newTheme);
+    }
+};
+
+// ============================================================================
 // Storage Management
 // ============================================================================
 
@@ -751,6 +783,9 @@ function switchView(viewName) {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize theme
+    ThemeManager.init();
+    
     // Initialize navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', function() {
