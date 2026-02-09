@@ -1372,7 +1372,7 @@ function switchView(viewName) {
             renderDashboard();
             break;
         case 'trends':
-            renderTrends();
+            requestAnimationFrame(() => renderTrends());
             break;
         case 'calendar':
             renderCalendar();
