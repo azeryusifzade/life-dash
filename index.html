@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Dashboard - Personal Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">
+                <span class="logo-icon">✨</span>
+                Life Dashboard
+            </h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view active">
+                <!-- Daily Tip Card -->
+                <div class="tip-card">
+                    <div class="tip-icon">💡</div>
+                    <h3>Daily Wisdom</h3>
+                    <p id="daily-tip" class="tip-text"></p>
+                </div>
+
+                <!-- Today's Summary -->
+                <div id="today-summary">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <!-- Quick Stats Grid -->
+                <div id="quick-stats" class="stats-grid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <!-- Time Distribution Chart -->
+                <div id="time-chart-container" class="chart-card">
+                    <h3>Today's Time Distribution</h3>
+                    <canvas id="timeChart"></canvas>
+                </div>
+
+                <!-- Personal Insights -->
+                <div id="insights-card" class="insights-card">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Input Form View -->
+            <div id="input-view" class="view">
+                <h2 class="section-title">Track Your Day</h2>
+                
+                <form id="daily-form" class="daily-form">
+                    <div class="form-card">
+                        <!-- Date -->
+                        <div class="form-group">
+                            <label for="date">📅 Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+
+                        <!-- Sleep -->
+                        <div class="form-group">
+                            <label for="sleep">
+                                😴 Sleep Hours
+                                <span class="value-display" id="sleep-value">7h</span>
+                            </label>
+                            <input type="range" id="sleep" min="0" max="12" step="0.5" value="7">
+                            <div class="range-labels">
+                                <span>0h</span>
+                                <span>12h</span>
+                            </div>
+                        </div>
+
+                        <!-- Food Type -->
+                        <div class="form-group">
+                            <label>🍽️ Food Quality</label>
+                            <div class="button-group">
+                                <button type="button" class="option-btn active" data-food="healthy">Healthy</button>
+                                <button type="button" class="option-btn" data-food="fast-food">Fast Food</button>
+                                <button type="button" class="option-btn" data-food="skipped">Skipped</button>
+                            </div>
+                        </div>
+
+                        <!-- Physical Activity -->
+                        <div class="form-group">
+                            <label for="activity">
+                                🏃 Physical Activity
+                                <span class="value-display" id="activity-value">30 min</span>
+                            </label>
+                            <input type="range" id="activity" min="0" max="180" step="5" value="30">
+                            <div class="range-labels">
+                                <span>0 min</span>
+                                <span>180 min</span>
+                            </div>
+                        </div>
+
+                        <!-- Screen Time -->
+                        <div class="form-group">
+                            <label for="screen">
+                                📱 Screen Time
+                                <span class="value-display" id="screen-value">4h</span>
+                            </label>
+                            <input type="range" id="screen" min="0" max="16" step="0.5" value="4">
+                            <div class="range-labels">
+                                <span>0h</span>
+                                <span>16h</span>
+                            </div>
+                        </div>
+
+                        <!-- Energy Level -->
+                        <div class="form-group">
+                            <label>⚡ Energy Level</label>
+                            <div class="rating-group">
+                                <button type="button" class="rating-btn" data-rating="1">1</button>
+                                <button type="button" class="rating-btn" data-rating="2">2</button>
+                                <button type="button" class="rating-btn active" data-rating="3">3</button>
+                                <button type="button" class="rating-btn" data-rating="4">4</button>
+                                <button type="button" class="rating-btn" data-rating="5">5</button>
+                            </div>
+                        </div>
+
+                        <!-- Mood -->
+                        <div class="form-group">
+                            <label>❤️ Mood</label>
+                            <div class="rating-group" id="mood-rating">
+                                <button type="button" class="rating-btn" data-rating="1">1</button>
+                                <button type="button" class="rating-btn" data-rating="2">2</button>
+                                <button type="button" class="rating-btn active" data-rating="3">3</button>
+                                <button type="button" class="rating-btn" data-rating="4">4</button>
+                                <button type="button" class="rating-btn" data-rating="5">5</button>
+                            </div>
+                        </div>
+
+                        <!-- Time Allocation -->
+                        <div class="form-group">
+                            <label>⏰ Time Allocation (hours)</label>
+                            
+                            <div class="time-input">
+                                <label for="work-time">
+                                    Work/Study
+                                    <span class="value-display" id="work-value">0h</span>
+                                </label>
+                                <input type="range" id="work-time" min="0" max="16" step="0.5" value="0">
+                            </div>
+
+                            <div class="time-input">
+                                <label for="personal-time">
+                                    Personal Projects
+                                    <span class="value-display" id="personal-value">0h</span>
+                                </label>
+                                <input type="range" id="personal-time" min="0" max="16" step="0.5" value="0">
+                            </div>
+
+                            <div class="time-input">
+                                <label for="social-time">
+                                    Social/Family
+                                    <span class="value-display" id="social-value">0h</span>
+                                </label>
+                                <input type="range" id="social-time" min="0" max="16" step="0.5" value="0">
+                            </div>
+
+                            <div class="time-input">
+                                <label for="rest-time">
+                                    Rest/Leisure
+                                    <span class="value-display" id="rest-value">0h</span>
+                                </label>
+                                <input type="range" id="rest-time" min="0" max="16" step="0.5" value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        💾 Save Entry
+                    </button>
+                </form>
+            </div>
+
+            <!-- Trends View -->
+            <div id="trends-view" class="view">
+                <h2 class="section-title">Your Trends</h2>
+                
+                <div class="chart-card">
+                    <h3>Energy & Mood (Last 7 Days)</h3>
+                    <canvas id="energyMoodChart"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Sleep & Activity (Last 7 Days)</h3>
+                    <canvas id="sleepActivityChart"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Screen Time Trend</h3>
+                    <canvas id="screenTimeChart"></canvas>
+                </div>
+
+                <div id="stats-summary" class="stats-summary">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div id="calendar-view" class="view">
+                <h2 class="section-title">Monthly Calendar</h2>
+                
+                <div class="calendar-card">
+                    <div class="calendar-header">
+                        <button id="prev-month" class="month-nav">‹</button>
+                        <h3 id="current-month"></h3>
+                        <button id="next-month" class="month-nav">›</button>
+                    </div>
+                    
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">Sun</div>
+                        <div class="calendar-day-header">Mon</div>
+                        <div class="calendar-day-header">Tue</div>
+                        <div class="calendar-day-header">Wed</div>
+                        <div class="calendar-day-header">Thu</div>
+                        <div class="calendar-day-header">Fri</div>
+                        <div class="calendar-day-header">Sat</div>
+                        <div id="calendar-days"></div>
+                    </div>
+                </div>
+
+                <!-- Day Detail Modal -->
+                <div id="day-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-modal">&times;</span>
+                        <h3 id="modal-date"></h3>
+                        <div id="modal-stats"></div>
+                        <div id="modal-insights"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-view="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-view="input">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">Track</span>
+        </button>
+        <button class="nav-btn" data-view="trends">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Trends</span>
+        </button>
+        <button class="nav-btn" data-view="calendar">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Calendar</span>
+        </button>
+    </nav>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Main App Script -->
+    <script src="app.js"></script>
+</body>
+</html>
