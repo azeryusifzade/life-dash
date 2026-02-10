@@ -1,4 +1,4 @@
-/* Life Analytics - Comprehensive Styling */
+/* Life Analytics - Comprehensive Styling - FIXED VERSION */
 
 :root {
     --primary-50: #f5f7ff;
@@ -767,6 +767,8 @@ body {
     font-size: 4rem;
     font-weight: 700;
     background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     line-height: 1;
 }

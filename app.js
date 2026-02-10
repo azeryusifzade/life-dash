@@ -1,4 +1,4 @@
-// Life Analytics - Comprehensive Application
+// Life Analytics - Fixed & Enhanced Version
 // ============================================================================
 
 const WISDOM_QUOTES = [
@@ -37,9 +37,24 @@ const ACHIEVEMENTS = [
     { id: 'habit_master', name: 'Habit Master', desc: 'Complete all habits for 14 days', icon: '✅' }
 ];
 
+// Storage Manager
 const Storage = {
-    getEntries() { return JSON.parse(localStorage.getItem('lifeAnalyticsEntries') || '[]'); },
-    saveEntries(entries) { localStorage.setItem('lifeAnalyticsEntries', JSON.stringify(entries)); },
+    getEntries() { 
+        try {
+            return JSON.parse(localStorage.getItem('lifeAnalyticsEntries') || '[]'); 
+        } catch (e) {
+            console.error('Error reading entries:', e);
+            return [];
+        }
+    },
+    saveEntries(entries) { 
+        try {
+            localStorage.setItem('lifeAnalyticsEntries', JSON.stringify(entries)); 
+        } catch (e) {
+            console.error('Error saving entries:', e);
+            Toast.show('Error saving data. Storage may be full.');
+        }
+    },
     addEntry(entry) {
         const entries = this.getEntries();
         const existingIndex = entries.findIndex(e => e.date === entry.date);
@@ -50,7 +65,14 @@ const Storage = {
         return entries;
     },
     getEntryByDate(date) { return this.getEntries().find(e => e.date === date); },
-    getHabits() { return JSON.parse(localStorage.getItem('lifeAnalyticsHabits') || '[]'); },
+    getHabits() { 
+        try {
+            return JSON.parse(localStorage.getItem('lifeAnalyticsHabits') || '[]'); 
+        } catch (e) {
+            console.error('Error reading habits:', e);
+            return [];
+        }
+    },
     saveHabits(habits) { localStorage.setItem('lifeAnalyticsHabits', JSON.stringify(habits)); },
     addHabit(habit) {
         const habits = this.getHabits();
@@ -63,7 +85,14 @@ const Storage = {
         this.saveHabits(filtered);
         return filtered;
     },
-    getGoals() { return JSON.parse(localStorage.getItem('lifeAnalyticsGoals') || '[]'); },
+    getGoals() { 
+        try {
+            return JSON.parse(localStorage.getItem('lifeAnalyticsGoals') || '[]'); 
+        } catch (e) {
+            console.error('Error reading goals:', e);
+            return [];
+        }
+    },
     saveGoals(goals) { localStorage.setItem('lifeAnalyticsGoals', JSON.stringify(goals)); },
     addGoal(goal) {
         const goals = this.getGoals();
@@ -76,15 +105,26 @@ const Storage = {
         this.saveGoals(filtered);
         return filtered;
     },
-    getAchievements() { return JSON.parse(localStorage.getItem('lifeAnalyticsAchievements') || '[]'); },
+    getAchievements() { 
+        try {
+            return JSON.parse(localStorage.getItem('lifeAnalyticsAchievements') || '[]'); 
+        } catch (e) {
+            console.error('Error reading achievements:', e);
+            return [];
+        }
+    },
     saveAchievements(achievements) { localStorage.setItem('lifeAnalyticsAchievements', JSON.stringify(achievements)); }
 };
 
+// Toast Notification System
 const Toast = {
     show(message, showUndo = false) {
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
         const undoBtn = document.getElementById('undo-btn');
+        
+        if (!toast || !toastMessage || !undoBtn) return;
+        
         toastMessage.textContent = message;
         undoBtn.style.display = showUndo ? 'block' : 'none';
         toast.classList.add('show');
@@ -92,6 +132,7 @@ const Toast = {
     }
 };
 
+// Theme Manager
 const ThemeManager = {
     init() {
         const savedTheme = localStorage.getItem('theme') || 'light';
@@ -108,16 +149,26 @@ const ThemeManager = {
     }
 };
 
+// Chart Management
 let charts = {};
 let currentPeriod = 7;
 
 function destroyChart(chartId) {
     if (charts[chartId]) {
-        charts[chartId].destroy();
+        try {
+            charts[chartId].destroy();
+        } catch (e) {
+            console.error('Error destroying chart:', chartId, e);
+        }
         delete charts[chartId];
     }
 }
 
+function destroyAllCharts() {
+    Object.keys(charts).forEach(chartId => destroyChart(chartId));
+}
+
+// Wisdom Quotes
 function getRandomWisdom() {
     return WISDOM_QUOTES[Math.floor(Math.random() * WISDOM_QUOTES.length)];
 }
@@ -131,6 +182,7 @@ function displayWisdom() {
     }
 }
 
+// Streak Calculation
 function calculateStreak() {
     const entries = Storage.getEntries().sort((a, b) => new Date(b.date) - new Date(a.date));
     if (entries.length === 0) return 0;
@@ -180,6 +232,7 @@ function renderStreak() {
     `;
 }
 
+// Achievements System
 function checkAchievements() {
     const entries = Storage.getEntries();
     const unlocked = Storage.getAchievements();
@@ -255,6 +308,7 @@ function renderAchievements() {
     `;
 }
 
+// Suggestions Generator
 function generateSuggestions(entry) {
     const suggestions = [];
     
@@ -437,11 +491,12 @@ function renderSuggestions() {
     `;
 }
 
+// Data Helpers
 function getDataForPeriod(period) {
     const entries = Storage.getEntries();
-    const days = period === 'all' ? entries.length : period;
+    const days = period === 'all' ? Math.min(entries.length, 90) : period;
     
-    return [...Array(Math.min(days, 90))].map((_, i) => {
+    return [...Array(days)].map((_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - (days - 1 - i));
         const dateStr = date.toISOString().split('T')[0];
@@ -463,6 +518,7 @@ function getDataForPeriod(period) {
     });
 }
 
+// Chart Creation Functions
 function createTimeChart(entry) {
     const canvas = document.getElementById('timeChart');
     if (!canvas) return;
@@ -477,32 +533,36 @@ function createTimeChart(entry) {
     ].filter(item => item.value > 0);
     
     if (data.length === 0) {
-        canvas.style.display = 'none';
+        canvas.parentElement.style.display = 'none';
         return;
     }
     
-    canvas.style.display = 'block';
+    canvas.parentElement.style.display = 'block';
     
-    charts.timeChart = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels: data.map(d => d.name),
-            datasets: [{
-                data: data.map(d => d.value),
-                backgroundColor: data.map(d => d.color),
-                borderWidth: 2,
-                borderColor: '#ffffff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { position: 'bottom', labels: { padding: 15, font: { size: 12, weight: '500' } } },
-                tooltip: { callbacks: { label: (context) => `${context.label}: ${context.parsed}h` } }
+    try {
+        charts.timeChart = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: data.map(d => d.color),
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 15, font: { size: 12, weight: '500' } } },
+                    tooltip: { callbacks: { label: (context) => `${context.label}: ${context.parsed}h` } }
+                }
             }
-        }
-    });
+        });
+    } catch (e) {
+        console.error('Error creating time chart:', e);
+    }
 }
 
 function createWeeklyChart() {
@@ -513,249 +573,293 @@ function createWeeklyChart() {
     
     const data = getDataForPeriod(7);
     
-    charts.weeklyChart = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: data.map(d => d.date),
-            datasets: [{
-                label: 'Energy',
-                data: data.map(d => d.energy),
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } },
-            plugins: { legend: { display: false } }
-        }
-    });
+    try {
+        charts.weeklyChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [{
+                    label: 'Energy',
+                    data: data.map(d => d.energy),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    } catch (e) {
+        console.error('Error creating weekly chart:', e);
+    }
 }
 
 function createTrendCharts() {
     const data = getDataForPeriod(currentPeriod);
     const entries = Storage.getEntries();
     
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded');
+        Toast.show('Chart library not loaded. Please refresh the page.');
+        return;
+    }
+    
     // Energy & Mood
     const energyCanvas = document.getElementById('energyMoodChart');
     if (energyCanvas) {
         destroyChart('energyMoodChart');
-        charts.energyMoodChart = new Chart(energyCanvas, {
-            type: 'line',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [
-                    {
-                        label: 'Energy',
-                        data: data.map(d => d.energy),
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Mood',
-                        data: data.map(d => d.mood),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } }
-            }
-        });
+        try {
+            charts.energyMoodChart = new Chart(energyCanvas, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'Energy',
+                            data: data.map(d => d.energy),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Mood',
+                            data: data.map(d => d.mood),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } }
+                }
+            });
+        } catch (e) {
+            console.error('Error creating energy mood chart:', e);
+        }
     }
     
     // Sleep & Activity
     const sleepCanvas = document.getElementById('sleepActivityChart');
     if (sleepCanvas) {
         destroyChart('sleepActivityChart');
-        charts.sleepActivityChart = new Chart(sleepCanvas, {
-            type: 'bar',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [
-                    { label: 'Sleep (hours)', data: data.map(d => d.sleep), backgroundColor: '#3b82f6', borderRadius: 6 },
-                    { label: 'Activity (min)', data: data.map(d => d.activity), backgroundColor: '#f59e0b', borderRadius: 6 }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: true }
-        });
+        try {
+            charts.sleepActivityChart = new Chart(sleepCanvas, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [
+                        { label: 'Sleep (hours)', data: data.map(d => d.sleep), backgroundColor: '#3b82f6', borderRadius: 6 },
+                        { label: 'Activity (min)', data: data.map(d => d.activity), backgroundColor: '#f59e0b', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+        } catch (e) {
+            console.error('Error creating sleep activity chart:', e);
+        }
     }
     
     // Screen Time
     const screenCanvas = document.getElementById('screenTimeChart');
     if (screenCanvas) {
         destroyChart('screenTimeChart');
-        charts.screenTimeChart = new Chart(screenCanvas, {
-            type: 'line',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [{
-                    label: 'Screen Time (hours)',
-                    data: data.map(d => d.screenTime),
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: true }
-        });
+        try {
+            charts.screenTimeChart = new Chart(screenCanvas, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Screen Time (hours)',
+                        data: data.map(d => d.screenTime),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+        } catch (e) {
+            console.error('Error creating screen time chart:', e);
+        }
     }
     
     // Food Quality
     const foodCanvas = document.getElementById('foodQualityChart');
     if (foodCanvas && entries.length > 0) {
         destroyChart('foodQualityChart');
-        const foodCounts = entries.reduce((acc, e) => {
-            acc[e.foodType] = (acc[e.foodType] || 0) + 1;
-            return acc;
-        }, {});
-        charts.foodQualityChart = new Chart(foodCanvas, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(foodCounts).map(k => k === 'healthy' ? 'Healthy' : k === 'fast-food' ? 'Fast Food' : 'Skipped'),
-                datasets: [{
-                    data: Object.values(foodCounts),
-                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
+        try {
+            const foodCounts = entries.reduce((acc, e) => {
+                acc[e.foodType] = (acc[e.foodType] || 0) + 1;
+                return acc;
+            }, {});
+            charts.foodQualityChart = new Chart(foodCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(foodCounts).map(k => k === 'healthy' ? 'Healthy' : k === 'fast-food' ? 'Fast Food' : 'Skipped'),
+                    datasets: [{
+                        data: Object.values(foodCounts),
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        } catch (e) {
+            console.error('Error creating food quality chart:', e);
+        }
     }
     
     // Balance Chart
     const balanceCanvas = document.getElementById('balanceChart');
     if (balanceCanvas && entries.length > 0) {
         destroyChart('balanceChart');
-        const avgData = {
-            work: entries.reduce((sum, e) => sum + (e.workTime || 0), 0) / entries.length || 0,
-            personal: entries.reduce((sum, e) => sum + (e.personalTime || 0), 0) / entries.length || 0,
-            social: entries.reduce((sum, e) => sum + (e.socialTime || 0), 0) / entries.length || 0,
-            rest: entries.reduce((sum, e) => sum + (e.restTime || 0), 0) / entries.length || 0
-        };
-        charts.balanceChart = new Chart(balanceCanvas, {
-            type: 'polarArea',
-            data: {
-                labels: ['Work', 'Personal', 'Social', 'Rest'],
-                datasets: [{
-                    data: [avgData.work, avgData.personal, avgData.social, avgData.rest],
-                    backgroundColor: ['rgba(102, 126, 234, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(59, 130, 246, 0.6)'],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
-        });
+        try {
+            const avgData = {
+                work: entries.reduce((sum, e) => sum + (e.workTime || 0), 0) / entries.length || 0,
+                personal: entries.reduce((sum, e) => sum + (e.personalTime || 0), 0) / entries.length || 0,
+                social: entries.reduce((sum, e) => sum + (e.socialTime || 0), 0) / entries.length || 0,
+                rest: entries.reduce((sum, e) => sum + (e.restTime || 0), 0) / entries.length || 0
+            };
+            charts.balanceChart = new Chart(balanceCanvas, {
+                type: 'polarArea',
+                data: {
+                    labels: ['Work', 'Personal', 'Social', 'Rest'],
+                    datasets: [{
+                        data: [avgData.work, avgData.personal, avgData.social, avgData.rest],
+                        backgroundColor: ['rgba(102, 126, 234, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(59, 130, 246, 0.6)'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        } catch (e) {
+            console.error('Error creating balance chart:', e);
+        }
     }
     
     // Wellness Score
     const wellnessCanvas = document.getElementById('wellnessChart');
     if (wellnessCanvas) {
         destroyChart('wellnessChart');
-        const wellnessScores = data.map(d => {
-            if (!d.entry) return 0;
-            const sleepScore = Math.min(d.sleep / 8, 1) * 20;
-            const activityScore = Math.min(d.activity / 30, 1) * 20;
-            const energyScore = (d.energy / 5) * 20;
-            const moodScore = (d.mood / 5) * 20;
-            const screenPenalty = Math.max(0, 20 - (d.screenTime * 2));
-            return sleepScore + activityScore + energyScore + moodScore + screenPenalty;
-        });
-        charts.wellnessChart = new Chart(wellnessCanvas, {
-            type: 'bar',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [{
-                    label: 'Wellness Score',
-                    data: wellnessScores,
-                    backgroundColor: wellnessScores.map(score => score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'),
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
-                plugins: { legend: { display: false } }
-            }
-        });
+        try {
+            const wellnessScores = data.map(d => {
+                if (!d.entry) return 0;
+                const sleepScore = Math.min(d.sleep / 8, 1) * 20;
+                const activityScore = Math.min(d.activity / 30, 1) * 20;
+                const energyScore = (d.energy / 5) * 20;
+                const moodScore = (d.mood / 5) * 20;
+                const screenPenalty = Math.max(0, 20 - (d.screenTime * 2));
+                return sleepScore + activityScore + energyScore + moodScore + screenPenalty;
+            });
+            charts.wellnessChart = new Chart(wellnessCanvas, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Wellness Score',
+                        data: wellnessScores,
+                        backgroundColor: wellnessScores.map(score => score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        } catch (e) {
+            console.error('Error creating wellness chart:', e);
+        }
     }
     
     // Hydration & Steps
     const hydrationCanvas = document.getElementById('hydrationChart');
     if (hydrationCanvas) {
         destroyChart('hydrationChart');
-        charts.hydrationChart = new Chart(hydrationCanvas, {
-            type: 'bar',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [
-                    { label: 'Water (glasses)', data: data.map(d => d.water), backgroundColor: '#3b82f6', borderRadius: 6 },
-                    { label: 'Steps (k)', data: data.map(d => d.steps), backgroundColor: '#10b981', borderRadius: 6 }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: true }
-        });
+        try {
+            charts.hydrationChart = new Chart(hydrationCanvas, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [
+                        { label: 'Water (glasses)', data: data.map(d => d.water), backgroundColor: '#3b82f6', borderRadius: 6 },
+                        { label: 'Steps (k)', data: data.map(d => d.steps), backgroundColor: '#10b981', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+        } catch (e) {
+            console.error('Error creating hydration chart:', e);
+        }
     }
     
     // Stress vs Productivity
     const stressCanvas = document.getElementById('stressProductivityChart');
     if (stressCanvas) {
         destroyChart('stressProductivityChart');
-        charts.stressProductivityChart = new Chart(stressCanvas, {
-            type: 'line',
-            data: {
-                labels: data.map(d => d.date),
-                datasets: [
-                    {
-                        label: 'Stress',
-                        data: data.map(d => d.stress),
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Productivity',
-                        data: data.map(d => d.productivity),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } }
-            }
-        });
+        try {
+            charts.stressProductivityChart = new Chart(stressCanvas, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'Stress',
+                            data: data.map(d => d.stress),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Productivity',
+                            data: data.map(d => d.productivity),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } }
+                }
+            });
+        } catch (e) {
+            console.error('Error creating stress productivity chart:', e);
+        }
     }
 }
 
+// Dashboard Rendering
 function renderDashboard() {
     const dateDisplay = document.getElementById('current-date');
     if (dateDisplay) {
@@ -782,6 +886,11 @@ function renderDashboard() {
         document.getElementById('habits-summary').innerHTML = '';
         document.getElementById('suggestions-container').innerHTML = '';
         document.getElementById('achievements-container').innerHTML = '';
+        
+        // Hide charts if no data
+        const timeChartCard = document.getElementById('timeChart')?.parentElement;
+        if (timeChartCard) timeChartCard.style.display = 'none';
+        
         return;
     }
     
@@ -839,6 +948,7 @@ function renderHabitsSummary(entry) {
     `;
 }
 
+// Form Initialization
 function initializeForm() {
     const form = document.getElementById('daily-form');
     const today = new Date().toISOString().split('T')[0];
@@ -1040,6 +1150,7 @@ function initializeHabitModal() {
     });
 }
 
+// Goals Management
 function renderGoals() {
     const container = document.getElementById('goals-container');
     if (!container) return;
@@ -1127,6 +1238,7 @@ function initializeGoalModal() {
     }
 }
 
+// Trends View
 function renderTrends() {
     const entries = Storage.getEntries();
     
@@ -1166,6 +1278,7 @@ function renderTrends() {
     `;
 }
 
+// Reports View
 function renderReports() {
     const entries = Storage.getEntries();
     
@@ -1256,6 +1369,9 @@ function renderReports() {
         </div>
     `;
 }
+
+// Calendar Functions
+let currentCalendarDate = new Date();
 
 function renderCalendar() {
     const monthYear = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -1354,19 +1470,32 @@ function showDayModal(date) {
     modal.classList.add('active');
 }
 
-let currentCalendarDate = new Date();
-
+// View Switching
 function switchView(viewName) {
+    console.log('Switching to view:', viewName);
+    
+    // Destroy all charts before switching to prevent memory leaks
+    if (viewName !== 'trends' && viewName !== 'dashboard') {
+        destroyAllCharts();
+    }
+    
+    // Remove active class from all views
     document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
     
+    // Add active class to selected view
     const view = document.getElementById(`${viewName}-view`);
-    if (view) view.classList.add('active');
+    if (view) {
+        view.classList.add('active');
+    } else {
+        console.error('View not found:', viewName);
+    }
     
+    // Update navigation
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    
     const activeBtn = document.querySelector(`[data-view="${viewName}"]`);
     if (activeBtn) activeBtn.classList.add('active');
     
+    // Render view-specific content
     switch(viewName) {
         case 'dashboard':
             renderDashboard();
@@ -1386,6 +1515,7 @@ function switchView(viewName) {
     }
 }
 
+// Settings
 function initializeSettings() {
     const settingsBtn = document.getElementById('settings-btn');
     const modal = document.getElementById('settings-modal');
@@ -1483,23 +1613,40 @@ function updateAppStats() {
     `;
 }
 
+// Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('App initializing...');
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded! Charts will not work.');
+        Toast.show('Chart library failed to load. Some features may not work.');
+    } else {
+        console.log('Chart.js loaded successfully');
+    }
+    
     ThemeManager.init();
     
+    // Navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            switchView(this.dataset.view);
+            const viewName = this.dataset.view;
+            console.log('Nav button clicked:', viewName);
+            switchView(viewName);
         });
     });
     
+    // Initialize components
     initializeForm();
     initializeHabitModal();
     initializeGoalModal();
     initializeSettings();
     
+    // Wisdom refresh button
     const newWisdomBtn = document.getElementById('new-wisdom');
     if (newWisdomBtn) newWisdomBtn.addEventListener('click', displayWisdom);
     
+    // Calendar navigation
     document.getElementById('prev-month')?.addEventListener('click', function() {
         currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
         renderCalendar();
@@ -1510,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCalendar();
     });
     
+    // Period selector for trends
     document.querySelectorAll('.period-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
@@ -1519,17 +1667,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Modal close buttons
     document.querySelectorAll('.close-modal').forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.modal').classList.remove('active');
         });
     });
     
+    // Close modals on background click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) this.classList.remove('active');
         });
     });
     
+    // Initial render
     renderDashboard();
+    
+    console.log('App initialized successfully');
 });
