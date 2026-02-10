@@ -601,6 +601,7 @@ function createWeeklyChart() {
 }
 
 function createTrendCharts() {
+try{
     const data = getDataForPeriod(currentPeriod);
     const entries = Storage.getEntries();
     
@@ -856,6 +857,10 @@ function createTrendCharts() {
         } catch (e) {
             console.error('Error creating stress productivity chart:', e);
         }
+    }
+    } catch (error) {
+        console.error('Error creating trend charts:', error);
+        Toast.show('Error loading charts');
     }
 }
 
@@ -1472,12 +1477,13 @@ function showDayModal(date) {
 
 // View Switching
 function switchView(viewName) {
-    console.log('Switching to view:', viewName);
+     console.log('Switching to view:', viewName);
     
-    // Destroy all charts before switching to prevent memory leaks
-    if (viewName !== 'trends' && viewName !== 'dashboard') {
-        destroyAllCharts();
-    }
+    try {
+        // Destroy all charts before switching to prevent memory leaks
+        if (viewName !== 'trends' && viewName !== 'dashboard') {
+            destroyAllCharts();
+        }
     
     // Remove active class from all views
     document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -1512,6 +1518,10 @@ function switchView(viewName) {
         case 'reports':
             renderReports();
             break;
+    }
+    } catch (error) {
+        console.error('Error switching view:', error);
+        Toast.show('Error loading view. Please try again.');
     }
 }
 
